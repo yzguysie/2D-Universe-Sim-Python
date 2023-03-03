@@ -1,4 +1,5 @@
 # Setup
+
 import pygame
 import pygame.gfxdraw
 pygame.init()
@@ -6,10 +7,11 @@ import math
 import random
 import time
 
+
 from configparser import ConfigParser
 
 config = ConfigParser()
-
+"""
 # parse existing file
 config.read('2D Universe Sandbox.ini')
 
@@ -20,16 +22,18 @@ scale = config.getint('engine', 'scale')
 trail_update_rate = config.getint('engine', 'trail_update_rate')
 settings_preset = config.getint('engine', 'settings_preset')
 # update existing value
-
+"""
 
 width, height = 1280, 720
-speed = 20
-#fps = 60
+speed = 10
+fps = 60
+settings_preset = ""
 
-#tickrate = 30
-#scale = 5
-trail_update_rate = 20
-trail_length = 10
+
+tickrate = 30
+scale = 5
+trail_update_rate = 30
+trail_length = 150
 enable_trails = True
 aa_trails = True
 background_color = (0, 0, 0)
@@ -38,7 +42,7 @@ draw_shine = True
 aa_bodies = True
 dist_before_deletion = 25000
 panel = False
-
+gravity = 10
 
 font = 'arial'
 font_width = int(width/100+1)
@@ -53,7 +57,7 @@ Total_time = 0
 trail_draw_time = 0
 list_sorting_time = 0
 drawing_bodies_time = 0
-
+panel_rank = 0
 #Space Dust (Random Bodies)
 enable_space_dust = True
 space_dust_amount = 500
@@ -63,6 +67,50 @@ space_dust_x_speed_variation = 300
 space_dust_y_speed_variation = 300
 space_dust_min_radius = 1
 space_dust_max_radius = 10
+EXPLOSION_FRAGMENT_COUNT = 10
+mass_before_exploding = 1000
+
+bottom_panel = True
+bottom_panel_type = 1
+
+
+
+
+
+
+
+
+user_made_mass = 200
+# parse existing file
+
+read_from_file = False
+
+if read_from_file:
+    config.read('2D Universe Sandbox.ini')
+
+    fps = config.getint('engine', 'fps')
+    tickrate = config.getint('engine', 'tickrate')
+    scale = config.getint('engine', 'scale')
+    trail_update_rate = config.getint('engine', 'trail_update_rate')
+    trail_length = config.getint('engine', 'trail_length')
+    settings_preset = config.getint('engine', 'settings_preset')
+    enable_trails = config.getboolean('engine', 'enable_trails')
+    draw_shine = config.getboolean('engine', 'draw_shine')
+    dist_before_deletion = config.getint('engine', 'dist_before_deletion')
+    gravity = config.getint('engine', 'gravity')
+    speed = config.getint('engine', 'speed')
+    
+    enable_space_dust = config.getboolean('spaceDust','enable_space_dust')
+    space_dust_amount = config.getint('spaceDust', 'space_dust_amount')
+    space_dust_x_variation = config.getint('spaceDust', 'space_dust_x_variation')
+    space_dust_y_variation = config.getint('spaceDust', 'space_dust_y_variation')
+    space_dust_x_speed_variation = config.getint('spaceDust', 'space_dust_x_speed_variation')
+    space_dust_y_speed_variation = config.getint('spaceDust', 'space_dust_y_speed_variation')
+    space_dust_min_radius = config.getint('spaceDust', 'space_dust_min_radius')
+    space_dust_max_radius = config.getint('spaceDust', 'space_dust_min_radius')
+
+    bottom_panel_type = config.getint('engine', 'bottom_panel_type')
+    # update existing value
 
 if (settings_preset == 1):
     enable_trails = False
@@ -132,37 +180,56 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
 green = (0, 255, 0)
-yellow = (255, 255, 0)
 blue = (0, 0, 255)
+
+yellow = (255, 255, 0)
+idk = (255, 0, 255)
+idk2 = (0, 255, 255)
+
 gray = (128, 128, 128)
 dark_gray = (64, 64, 64)
 light_gray = (192, 192, 192)
 light_blue = (102, 178, 255)
+dark_blue = (0, 0, 192)
 
+EXPLOSION_MOMENTUM_RANGE = 25
+
+bottom_panel = True
+
+making_body_2 = False
+
+display_update_time = 0
 
 frames = 0
 ticks = 0
 class body:
-    def __init__(self, x, y, xspeed, yspeed, radius, color, mass, name):
+    def __init__(self, x, y, xspeed, yspeed, mass, color, name):
         self.x = x
         self.y = y
         self.xspeed = xspeed
         self.yspeed = yspeed
-        self.radius = radius
+        self.radius = ((mass*200)**(1/3))
         self.color = color
-        self.mass = (radius**3)/200
+        self.mass = mass
         self.name = name
         self.last_pos_x = []
         self.last_pos_y = []
 
     def draw(self):
-        if abs(self.x/scale+width/2) < 10000 and abs(self.y/scale+width/2) < 10000:
-            pygame.gfxdraw.filled_circle(window, int(self.x/scale+width/2), int(self.y/scale+height/2), int(self.radius/scale+1), self.color)
+        if abs(self.x/scale+width/2) < width+self.radius/scale and abs(self.y/scale+height/2) < height+self.radius/scale:
+            pygame.gfxdraw.filled_circle(window, int(self.x/scale+width/2), int(self.y/scale+height/2), int(self.radius/scale+.5), self.color)
             if aa_bodies:
-                pygame.gfxdraw.aacircle(window, int(self.x/scale+width/2), int(self.y/scale+height/2), int(self.radius/scale+1), self.color)
+                pygame.gfxdraw.aacircle(window, int(self.x/scale+width/2), int(self.y/scale+height/2), int(self.radius/scale+.5), self.color)
             if draw_shine:
-                pygame.draw.circle(window, white, (int(self.x/scale+width/2), int(self.y/scale+height/2)), int((self.radius*0.8)/scale+1), int(self.radius/scale/5), draw_top_right=True)
+                pygame.draw.circle(window, white, (int(self.x/scale+width/2), int(self.y/scale+height/2)), int((self.radius*0.8)/scale+.5), int(self.radius/scale/5), draw_top_right=True)
 
+    def draw_at_coords(self):
+
+        pygame.gfxdraw.filled_circle(window, int(self.x), int(self.y), int(self.radius+.5), self.color)
+        if aa_bodies:
+            pygame.gfxdraw.aacircle(window, int(self.x), int(self.y), int(self.radius+.5), self.color)
+        if draw_shine:
+            pygame.draw.circle(window, white, (int(self.x), int(self.y)), int((self.radius*0.8)+.5), int(self.radius/5), draw_top_right=True)
     def move(self):
         self.x += xspeed
         self.y += yspeed
@@ -179,7 +246,7 @@ class body:
                 y_dist = self.last_pos_y[i] - self.y
                 points = [((self.x)/scale+width/2,(self.y)/scale+height/2)]
                 if len(self.last_pos_x) < 3:
-                    pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+width/2,((self.last_pos_y[i])+0*(1))/scale+height/2), ((self.x)/scale+width/2,(self.y)/scale+height/2), int((self.radius/(3*scale))+1))
+                    pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+width/2,((self.last_pos_y[i])+0*(1))/scale+height/2), ((self.x)/scale+width/2,(self.y)/scale+height/2), int((self.radius/(3*scale)+.5)))
 
             else:
                
@@ -191,6 +258,11 @@ class body:
         if len(self.last_pos_x) > 2:
             pygame.draw.lines(window, self.color, False, points, int((self.radius/(3*scale))+1))
     def consume(self, consumed):
+        if self.mass >= mass_before_exploding and consumed.mass >= mass_before_exploding:
+            self.explode(EXPLOSION_FRAGMENT_COUNT)
+            consumed.explode(EXPLOSION_FRAGMENT_COUNT)
+            return
+            
         combined_mass = self.mass+consumed.mass
         self.radius = math.pow((self.radius**3+consumed.radius**3), 1/3)
         self.xspeed = ((self.xspeed*self.mass)+(consumed.xspeed*consumed.mass))/combined_mass
@@ -202,7 +274,9 @@ class body:
             if bodies[i].name == consumed.name:
                 bodies_to_delete.add(consumed.name)
                 break
-           
+
+    def collide(self, num_bodies):
+        pass     
                
 
     def calc_distance(self, other):
@@ -210,6 +284,25 @@ class body:
         y_dist = (self.y-other.y)
         total_dist = (math.sqrt(x_dist**2+y_dist**2))
         return (x_dist, y_dist, total_dist)
+
+    
+
+
+    def explode(self, num_bodies):
+        
+        mass_to_go = self.mass/3
+        bodies_to_go = num_bodies
+
+        for i in range(num_bodies):
+            currentMass = mass_to_go/bodies_to_go
+            currentX = self.x+random.randint(-int(self.radius*3), int(self.radius*3))
+            currentY = self.y+random.randint(-int(self.radius*3), int(self.radius*3))
+            currentXspeed = self.xspeed + random.randint(-EXPLOSION_MOMENTUM_RANGE, EXPLOSION_MOMENTUM_RANGE)
+            currentYspeed = self.yspeed + random.randint(-EXPLOSION_MOMENTUM_RANGE, EXPLOSION_MOMENTUM_RANGE)
+            bodies.append(body(currentX, currentY, currentXspeed, currentYspeed, currentMass, self.color, self.name+" fragment " + str(i)))
+            bodies_to_go -= 1
+            mass_to_go -= currentMass
+            bodies_to_delete.add(self.name)
 
 def calc_center_of_mass(bodies):
     center_x = 0
@@ -226,21 +319,18 @@ def print_time_used(time_name, time, used_time, total_time):
     print("Time used for " + time_name + ": " + str(int(time*10000)/10000))
     print("Percent of used time" + ": " + str(int(time*10000/used_time)/100) + "%")
     print("Percent of total time" + ": " + str(int(time*10000/total_time)/100) + "%")
-bodies = [body(width/2+100, height/2, 0, 0, 50, (220, 220, 20), 1000, "Sun"),
-          #body(width/2-100, height/2-250, -20, 0, 50, yellow, 1000, "Sun2"), # SET TO -1000 Mass and binary stars orbit each other for some reason otherwise broken
-          body(width/2, height/2-250, 30, 0, 10, blue, 30, "Earth"),
-          body(width/2, height/2-265, 35, 0, 1, light_gray, 30, "Moon"),
-          body(width/2, height/2-100, 30, 0, 5, gray, .5, "Mercury"),
-          body(width/2, height/2-1000, 30, 0, 12, light_blue, 10, "Uranus"),
-          body(width/2, height/2-400, 30, 0, 15, red, 15, "Saturn"),
-          body(width/2, height/2-600, 30, 0, 20, red, 15, "Jupiter"),
-          body(width/2, height/2-635, 37, 0, 1, red, 15, "JupiterMoon"),
-          body(width/2, height/2-1500, 30, 0, 12, light_blue, 10, "Neptune"),
+bodies = [body(width/2+100, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
           ]
+display_bodies = []
 
 if enable_space_dust:
     for i in range(space_dust_amount):
-        bodies.append(body(width/2+random.randint(-space_dust_x_variation, space_dust_x_variation), height/2-random.randint(-space_dust_y_variation, space_dust_y_variation), random.randint(-space_dust_x_speed_variation, space_dust_x_speed_variation), random.randint(-space_dust_y_speed_variation, space_dust_y_speed_variation), random.randint(1,100)/4, (random.randint(0,255), random.randint(0,255), random.randint(0,255)), random.randint(1,100)/30, "Space dust"+str(i)))
+        space_dust_x = width/2+random.randint(-space_dust_x_variation, space_dust_x_variation)
+        space_dust_y = height/2-random.randint(-space_dust_y_variation, space_dust_y_variation)
+        space_dust_xspeed = random.randint(-space_dust_x_speed_variation, space_dust_x_speed_variation)
+        space_dust_yspeed = random.randint(-space_dust_y_speed_variation, space_dust_y_speed_variation)
+        space_dust_mass = random.randint(1, 100)
+        bodies.append(body(space_dust_x, space_dust_y, space_dust_xspeed, space_dust_yspeed, space_dust_mass, (random.randint(0,255), random.randint(0,255), random.randint(0,255)), "Space dust"+str(i)))
 
 
 
@@ -263,8 +353,7 @@ def all_pair(items, func, data):
         currentbody.x += currentbody.xspeed/(fps/speed)
         currentbody.y += currentbody.yspeed/(fps/speed)
         trail_draw_start = time.time()
-        if enable_trails:
-            currentbody.draw_trail()
+
         trail_draw_time += time.time()-trail_draw_start
         if abs(currentbody.x - items[0].x) > dist_before_deletion or abs(currentbody.y - items[0].y) > dist_before_deletion:
             bodies_to_delete.add(currentbody.name)
@@ -272,11 +361,14 @@ def all_pair(items, func, data):
     Trails_time += time.time()-trail_start
        
 def bodies_gravity(body_a, body_b, bodies_to_delete):
+    while body_a.name==body_b.name:
+        body_b.name += str("-copy")
     body_distance_x, body_distance_y, body_distance = body_a.calc_distance(body_b)
     if body_distance == 0:
-        body_distance = 1
-    body_force_x = ((body_a.mass*body_b.mass)/body_distance**2)*body_distance_x
-    body_force_y = ((body_a.mass*body_b.mass)/body_distance**2)*body_distance_y
+        print("WARN: DIVISION BY 0 in bodies_gravity (body_distance = 0) (at " + str(time.time()-time_) + " seconds)")
+        body_distance = 0.001
+    body_force_x = ((body_a.mass*body_b.mass)/body_distance**2)*body_distance_x*gravity
+    body_force_y = ((body_a.mass*body_b.mass)/body_distance**2)*body_distance_y*gravity
 
     body_a.xspeed -= (body_force_x/body_a.mass)/(tickrate/speed)
     body_a.yspeed -= (body_force_y/body_a.mass)/(tickrate/speed)
@@ -294,6 +386,7 @@ def bodies_gravity(body_a, body_b, bodies_to_delete):
 
            
 def bodies_draw(items):
+    
     for body in items:
         body.draw()
 
@@ -308,7 +401,70 @@ def move_all(items, x, y):
         for i in range(len(body.last_pos_y)):
             body.last_pos_y[i] += y
 
+def info_panel(body):
+    panel_width = width/8
+    panel_height = height/2.5
+    panel_x = width-panel_width
+    panel_y = height/2-panel_height/2
+    panel_rect = (panel_x, panel_y, panel_width, panel_height)
+    
+    pygame.draw.rect(window, dark_gray, panel_rect)
+        
+    dialogue = dialogue_font.render("Name: " + panel_body.name, True, white)
+    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width)))
+    
+    dialogue = dialogue_font.render("Radius: " + str(int(panel_body.radius+.5)), True, white)
+    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*2.5)))
+    
+    dialogue = dialogue_font.render("Mass: " + str(int(panel_body.mass+.5)), True, white)
+    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*4)))
 
+    dialogue = dialogue_font.render("Coordinates: " + str(int(panel_body.x+.5)) + ", " + str(int(panel_body.y+.5)), True, white)
+    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*5.5)))
+    
+    dialogue = dialogue_font.render("Speed: " + str(int(panel_body.xspeed+.5)) + ", " + str(-int(panel_body.yspeed+.5)), True, white)
+    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*7)))
+    for i in range(len(bodies)):
+        panel_rank = 0
+
+        if bodies[i].name == panel_body.name:
+            panel_rank = i
+            break
+    dialogue = dialogue_font.render("Size Rank: " + str(panel_rank+1) + "/" + str(len(bodies)), True, white)
+    dialogue_rect = dialogue.get_rect()
+    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*8.5)))
+
+add_panel_width = width-width/8
+add_panel_height = height/5
+add_panel_x = width/16
+add_panel_y = height-add_panel_height
+
+
+
+
+
+
+
+def bottom_panel(display_bodies, bottom_panel_type):
+    panel_rect = (add_panel_x, add_panel_y, add_panel_width, add_panel_height)
+    pygame.draw.rect(window, dark_gray, panel_rect)
+
+    
+    if bottom_panel_type == 1:
+        for i in range(len(display_bodies)):
+            display_body = display_bodies[i]
+            display_body.x = (add_panel_x+(i/len(display_bodies))*(add_panel_width))+add_panel_width/len(display_bodies)/2
+            display_body.y = (height-add_panel_height/2)
+            display_body.draw_at_coords()
+            
+            dialogue = dialogue_font.render(display_body.name, True, white)
+            dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y-(display_body.radius)-font_width))
+            window.blit(dialogue, dialogue_rect)
+            
+    elif bottom_panel_type == 2:
+        pass
+    
+    
 
 pygame.mouse.set_visible(True)
 window = pygame.display.set_mode([width, height])
@@ -317,20 +473,39 @@ pygame.display.set_caption('Budget Universe Sandbox')
 
 clock = pygame.time.Clock()
 move_all(bodies, -width/2, -height/2)
-panel_body = body(width/2, height/2-250, 30, 0, 10, blue, 30, "noonebetterusethisnameorproblemswilloccur")
+panel_body = body(width/2, height/2-250, 30, 0, 10, blue, "noonebetterusethisnameorproblemswilloccur")
 #last_mouse_pos_x, last_mouse_pos_y = pygame.mouse.get_pos()
+if panel_rank > len(bodies) - 1:
+    panel_rank = 0
+    print("WARN: panel_rank out of range of list bodies, panel_rank set to 0. (at " + str(time.time()-time_) + " seconds)")
+center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
+
+selected_body = body(width/2, height/2-250, 30, 0, 10, blue, "User made " + str(random.randint(0, 100000000)))
+making_body = False
 playing = True
+start = time.time()-1
+
 while playing:
-    window.fill(background_color)
+    if frames % int(fps/10) == 0:
+        fps_ = int(1/(time.time()-start)+.5)
     start = time.time()
+    window.fill(background_color)
+    dialogue = dialogue_font.render("FPS: " + str(fps_), True, white)
+    dialogue_rect = dialogue.get_rect()
+    window.blit(dialogue, dialogue_rect)
+    
+
     list_sorting_start = time.time()
 
-    bodies.sort(key=lambda x: x.radius, reverse=True)
+
+    bodies.sort(key=lambda x: x.mass, reverse=True)
     list_sorting_time += time.time()-list_sorting_start
     mouse_x_change, mouse_y_change = pygame.mouse.get_rel()
     bodies_to_delete = set()
     all_pair(bodies, bodies_gravity, bodies_to_delete)
-    bodies = [body for body in bodies if body.name not in bodies_to_delete]
+
+    
+
     for event in pygame.event.get():
        
         if event.type == pygame.QUIT:
@@ -345,11 +520,12 @@ while playing:
        
                
             x,y = pygame.mouse.get_pos()
-            move_all(bodies, (x-width/2)*(scale-old_scale), (y-height/2)*(scale-old_scale))
+            if not follow:
+                move_all(bodies, (x-width/2)*(scale-old_scale), (y-height/2)*(scale-old_scale))
 
         if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
             x,y = pygame.mouse.get_pos()
-            print(str(((bodies[0].x/scale)+width/2)) + " " + str(x))
+            """
             for currentbody in bodies:
                 if abs(((currentbody.x/scale)+width/2)-x) < currentbody.radius/scale+5 and abs(((currentbody.y/scale)+height/2)-y) < currentbody.radius/scale+5:
                     if panel_body == currentbody:
@@ -357,39 +533,124 @@ while playing:
                     else:
                         panel = True
                     panel_body = currentbody
-                    break
+                    break"""
+            if making_body:
+                
+                making_body = False
+                making_body_2 = True
+            else:
+                for display_body in display_bodies:
+                    if abs(display_body.x-x) < display_body.radius+5 and abs(display_body.y-y) < display_body.radius+5:
+                        selected_body = body((display_body.x)+width/2, (display_body.y)+width/2, 0, 0, display_body.mass, display_body.color, display_body.name)
+                        if selected_body.mass < 0:
+                            selected_body.radius = 42
+                        start_x = selected_body.x
+                        start_y = selected_body.y
+                        making_body = True
+                        break
+
 
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 playing = False
                 break
+            
             if event.key == pygame.K_UP:
-                move_all(bodies, 0, scale*height/100)
+                panel = True
+                panel_body = bodies[0]
+                
             if event.key == pygame.K_DOWN:
-                move_all(bodies, 0, -scale*height/100)
+                panel = True
+                panel_body = bodies[len(bodies)-1]
+                
             if event.key == pygame.K_RIGHT:
-                move_all(bodies, -scale*width/100, 0)
+                if panel_rank+1 < len(bodies):
+                    panel = True
+                    panel_body = bodies[panel_rank+1]
+                    
             if event.key == pygame.K_LEFT:
-                move_all(bodies, scale*width/100, 0)
+                if panel_rank-1 >= 0:
+                    panel = True
+                    panel_body = bodies[panel_rank-1]
+                    
             if event.key == pygame.K_SPACE:
                 follow = not follow
+                
             if event.key == pygame.K_RETURN:
-                scale /= 1.1
-    if pygame.mouse.get_pressed()[0]:
-        x, y = pygame.mouse.get_pos()
-        bodies.append(body((x-width/2)*scale, (y-height/2)*scale, random.randint(-100,100)/1, random.randint(-100,100)/1, random.randint(1,100)/5, (random.randint(0,255), random.randint(0,255), random.randint(0,255)), random.randint(1,100)/30, "Space dust"+str(random.randint(0,100000))))
+                if panel_rank+1 < len(bodies):
+                    panel_body = bodies[panel_rank+1]
+                    
+            if event.key == pygame.K_TAB:
+                x,y = pygame.mouse.get_pos()
+                for currentbody in bodies:
+                    if abs(((currentbody.x/scale)+width/2)-x) < currentbody.radius/scale+5 and abs(((currentbody.y/scale)+height/2)-y) < currentbody.radius/scale+5:
+                        currentbody.explode(EXPLOSION_FRAGMENT_COUNT)
+                        break
+                    
+                for currentbody in bodies:
+                    if abs(((currentbody.x/scale)+width/2)-x) < currentbody.radius/scale+15 and abs(((currentbody.y/scale)+height/2)-y) < currentbody.radius/scale+15:
+                        currentbody.explode(EXPLOSION_FRAGMENT_COUNT)
+                        break
+                    
+    bodies = [body for body in bodies if body.name not in bodies_to_delete]
+    
+    for i in range(len(bodies)):
+        panel_rank = 0
+
+        if bodies[i].name == panel_body.name:
+            panel_rank = i
+            break
+    
+    if panel_rank > len(bodies) - 1:
+        panel_rank = 0
+        print("WARN: panel_rank out of range of list bodies, panel_rank set to 0. (at " + str(time.time()-time_) + " seconds)")
+    center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
+    
+    
+    if making_body:
+        x,y = pygame.mouse.get_pos()
+        selected_body.x = (x-width/2)*scale
+        start_x = (x-width/2)*scale
+        selected_body.y = (y-height/2)*scale
+        start_y = (y-height/2)*scale
+        selected_body.draw()
+        
+
+    if making_body_2:
+        if pygame.mouse.get_pressed()[0]:
+            x,y = pygame.mouse.get_pos()
+            #selected_body.x = (x-width/2)*scale
+            #selected_body.y = (y-height/2)*scale
+            if making_body:
+                making_body = False
+
+            selected_body.xspeed = (start_x - (x-width/2)*scale)/2
+            selected_body.yspeed = (start_y - (y-height/2)*scale)/2
+            selected_body.draw()
+        else:
+            selected_body.draw()
+            bodies.append(selected_body)
+            making_body_2 = False
+        
+        
+        
 
 
+
+
+        
+
+        
+        
     if pygame.mouse.get_pressed()[2]:
         if follow:
             follow = False
            
         move_all(bodies, mouse_x_change*scale, mouse_y_change*scale)
-        #last_mouse_pos_x, last_mouse_pos_y = pygame.mouse.get_pos()
-       
-    center_x, center_y = calc_center_of_mass([bodies[0]])
 
+
+    
     if pygame.mouse.get_pressed()[1]:
         move_all(bodies, -center_x, -center_y)
 
@@ -398,36 +659,67 @@ while playing:
    
     panel_width = width/8
     panel_height = height/2.5
-    panel_rect = (width-panel_width, height/2-panel_height/2, panel_width, panel_height)
-    if panel:
-        pygame.draw.rect(window, dark_gray, panel_rect)
-        dialogue = dialogue_font.render("Name: " + panel_body.name, True, white)
-        dialogue_rect = dialogue.get_rect(center=(width-panel_width+font_width, height/2-(panel_height/2-font_width)))
-        window.blit(dialogue, dialogue_rect)
-        dialogue = dialogue_font.render("Radius: " + str(int(panel_body.radius+.5)), True, white)
-        dialogue_rect = dialogue.get_rect(center=(width-panel_width+font_width, height/2-(panel_height/2-font_width*2)))
-        window.blit(dialogue, dialogue_rect)
-        dialogue = dialogue_font.render("Coordinates: " + str(int(panel_body.x+.5)) + ", " + str(int(panel_body.y+.5)), True, white)
-        dialogue_rect = dialogue.get_rect(center=(width-panel_width+font_width, height/2-(panel_height/2-font_width*3)))
-        window.blit(dialogue, dialogue_rect)
-        dialogue = dialogue_font.render("Speed: " + str(int(panel_body.xspeed+.5)) + ", " + str(int(panel_body.yspeed+.5)), True, white)
-        dialogue_rect = dialogue.get_rect(center=(width-panel_width+font_width, height/2-(panel_height/2-font_width*4)))
-        window.blit(dialogue, dialogue_rect)
+    panel_x = width-panel_width
+    panel_y = height/2-panel_height/2
+    panel_rect = (panel_x, panel_y, panel_width, panel_height)
+
+    trail_draw_start = time.time()
+    if enable_trails:
+        for currentbody in bodies:
+            currentbody.draw_trail()
+    Trails_time += time.time() - trail_draw_start
+
+
+
 
 
     drawing_bodies_start = time.time()
     bodies_draw(bodies)
     for currentbody in bodies:
-        dialogue = dialogue_font.render(currentbody.name, True, white)
-        dialogue_rect = dialogue.get_rect(center=(currentbody.x/scale+width/2, currentbody.y/scale+height/2-(currentbody.radius/scale*1.5)))
-        window.blit(dialogue, dialogue_rect)
+        if int(currentbody.radius/scale) > 0:
+            dialogue = dialogue_font.render(currentbody.name, True, white)
+            dialogue_rect = dialogue.get_rect(center=(currentbody.x/scale+width/2, currentbody.y/scale+height/2-(currentbody.radius/(scale))-font_width))
+            window.blit(dialogue, dialogue_rect)
     drawing_bodies_time += time.time()-drawing_bodies_start
+
+
+    if bottom_panel:
+        if bottom_panel_type == 1:
+            display_bodies = []
+            display_large_star = body(0, 0, 0, 0, 2500, light_blue, "Large Star (Display)")
+            display_small_star = body(0, 0, 0, 0, 500, yellow, "Small Star (Display)")
+            display_negative_mass_star = body(0, 0, 0, 0, 500, yellow, "Negative Star (Display)")
+            display_negative_mass_star.mass = -500
+            display_negative_mass_star.radius = 50
+            display_large_planet = body(0, 0, 0, 0, 200, dark_blue, "Large Planet (Display)")
+            display_small_planet = body(0, 0, 0, 0, 50, blue, "Small Planet (Display)")
+            display_large_asteroid = body(0, 0, 0, 0, 20, gray, "Large Asteroid (Display)")
+            display_small_asteroid = body(0, 0, 0, 0, 5, light_gray, "Small Asteroid (Display)")
+
+            display_bodies.append(display_large_star)
+            display_bodies.append(display_small_star)
+            display_bodies.append(display_negative_mass_star)
+            display_bodies.append(display_large_planet)
+            display_bodies.append(display_small_planet)
+            display_bodies.append(display_large_asteroid)
+            display_bodies.append(display_small_asteroid)
+            bottom_panel(display_bodies, bottom_panel_type)
+            
+
+    if panel:
+        info_panel(panel_body)
+        
+    center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
+
    
     dialogue = dialogue_font.render("Bodies: " + str(len(bodies)), True, white)
-    dialogue_rect = dialogue.get_rect(center=(width/30, height/50))
+    dialogue_rect = dialogue.get_rect(center=(width/30, height/30))
     window.blit(dialogue, dialogue_rect)
-   
+    
+    
+    display_update_start = time.time()
     pygame.display.flip()
+    display_update_time += time.time()-display_update_start
     Total_time += time.time()-start
     clock.tick(fps)
     frames += 1
@@ -437,7 +729,10 @@ while playing:
         ticks += 1
    
 
-
+print()
+print()
+print("---------------- Time Statistics ----------------")
+print()
 print("Time passed: " + str(time.time()-time_))
 print("Time used for any computations: " + str(Total_time))
 print()
@@ -450,9 +745,9 @@ print()
 print("Trails:")
 print_time_used("trails", Trails_time, Total_time, time.time()-time_)
 print()
-str(int(trail_draw_time*10000)/10000)
-print("Percent of trail time used for drawing: " + str(trail_draw_time*100/Trails_time) + "%")
-
+print("Display.flip():")
+print_time_used("updating display", display_update_time, Total_time, time.time()-time_)
+print()
 
 
 pygame.quit()
