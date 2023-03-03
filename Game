@@ -41,7 +41,7 @@ follow = True
 draw_shine = True
 aa_bodies = True
 dist_before_deletion = 25000
-panel = False
+panel = True
 gravity = 10
 
 font = 'arial'
@@ -67,7 +67,7 @@ space_dust_x_speed_variation = 300
 space_dust_y_speed_variation = 300
 space_dust_min_radius = 1
 space_dust_max_radius = 10
-EXPLOSION_FRAGMENT_COUNT = 10
+EXPLOSION_FRAGMENT_COUNT = 25
 mass_before_exploding = 1000
 
 bottom_panel = True
@@ -80,10 +80,10 @@ bottom_panel_type = 1
 
 
 
-user_made_mass = 200
+
 # parse existing file
 
-read_from_file = False
+read_from_file = True
 
 if read_from_file:
     config.read('2D Universe Sandbox.ini')
@@ -192,7 +192,7 @@ light_gray = (192, 192, 192)
 light_blue = (102, 178, 255)
 dark_blue = (0, 0, 192)
 
-EXPLOSION_MOMENTUM_RANGE = 25
+EXPLOSION_MOMENTUM_RANGE = 100
 
 bottom_panel = True
 
@@ -290,13 +290,13 @@ class body:
 
     def explode(self, num_bodies):
         
-        mass_to_go = self.mass/3
+        mass_to_go = self.mass/1.1
         bodies_to_go = num_bodies
 
         for i in range(num_bodies):
             currentMass = mass_to_go/bodies_to_go
-            currentX = self.x+random.randint(-int(self.radius*3), int(self.radius*3))
-            currentY = self.y+random.randint(-int(self.radius*3), int(self.radius*3))
+            currentX = self.x+random.randint(-int(self.radius*4), int(self.radius*4))
+            currentY = self.y+random.randint(-int(self.radius*4), int(self.radius*4))
             currentXspeed = self.xspeed + random.randint(-EXPLOSION_MOMENTUM_RANGE, EXPLOSION_MOMENTUM_RANGE)
             currentYspeed = self.yspeed + random.randint(-EXPLOSION_MOMENTUM_RANGE, EXPLOSION_MOMENTUM_RANGE)
             bodies.append(body(currentX, currentY, currentXspeed, currentYspeed, currentMass, self.color, self.name+" fragment " + str(i)))
@@ -462,7 +462,15 @@ def bottom_panel(display_bodies, bottom_panel_type):
             window.blit(dialogue, dialogue_rect)
             
     elif bottom_panel_type == 2:
-        pass
+        for i in range(len(display_bodies)):
+            display_body = display_bodies[i]
+            display_body.x = (add_panel_x+(i/len(display_bodies))*(add_panel_width))+add_panel_width/len(display_bodies)/2
+            display_body.y = (height-add_panel_height/2)
+            display_body.draw_at_coords()
+
+            dialogue = dialogue_font.render(display_body.name, True, white)
+            dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y-(display_body.radius)-font_width))
+            window.blit(dialogue, dialogue_rect)
     
     
 
@@ -474,6 +482,8 @@ pygame.display.set_caption('Budget Universe Sandbox')
 clock = pygame.time.Clock()
 move_all(bodies, -width/2, -height/2)
 panel_body = body(width/2, height/2-250, 30, 0, 10, blue, "noonebetterusethisnameorproblemswilloccur")
+if len(bodies) > 0:
+    panel_body = bodies[0]
 #last_mouse_pos_x, last_mouse_pos_y = pygame.mouse.get_pos()
 if panel_rank > len(bodies) - 1:
     panel_rank = 0
@@ -534,22 +544,43 @@ while playing:
                         panel = True
                     panel_body = currentbody
                     break"""
-            if making_body:
-                
-                making_body = False
-                making_body_2 = True
-            else:
-                for display_body in display_bodies:
-                    if abs(display_body.x-x) < display_body.radius+5 and abs(display_body.y-y) < display_body.radius+5:
-                        selected_body = body((display_body.x)+width/2, (display_body.y)+width/2, 0, 0, display_body.mass, display_body.color, display_body.name)
-                        if selected_body.mass < 0:
-                            selected_body.radius = 42
-                        start_x = selected_body.x
-                        start_y = selected_body.y
-                        making_body = True
-                        break
-
-
+            if bottom_panel:
+                if bottom_panel_type == 1:
+                    if making_body:
+                        
+                        making_body = False
+                        making_body_2 = True
+                    else:
+                        last_selected = selected_body
+                        selected_new = False
+                        for display_body in display_bodies:
+                            if abs(display_body.x-x) < display_body.radius+5 and abs(display_body.y-y) < display_body.radius+5:
+                                selected_body = body((display_body.x)+width/2, (display_body.y)+width/2, 0, 0, display_body.mass, display_body.color, display_body.name)
+                                if selected_body.mass < 0:
+                                    selected_body.radius = 42
+                                start_x = selected_body.x
+                                start_y = selected_body.y
+                                making_body = True
+                                selected_new = True
+                                break
+                        if not selected_new:
+                            x,y = pygame.mouse.get_pos()
+                            selected_body = body((x)+width/2, (y)+width/2, 0, 0, selected_body.mass, selected_body.color, selected_body.name)
+                            if selected_body.mass < 0:
+                                selected_body.radius = 42
+                            start_x = selected_body.x
+                            start_y = selected_body.y
+                            making_body_2 = True
+                            making_body = True
+                                                        
+                if bottom_panel_type == 2:
+                    for clicked_body in display_bodies:
+                        if abs(clicked_body.x-x) < clicked_body.radius+5 and abs(clicked_body.y-y) < clicked_body.radius+5:
+        
+                            for i in range(len(bodies)):
+                                if bodies[i].name == clicked_body.name:
+                                    panel_body = bodies[i]
+                                    break
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -605,36 +636,47 @@ while playing:
     if panel_rank > len(bodies) - 1:
         panel_rank = 0
         print("WARN: panel_rank out of range of list bodies, panel_rank set to 0. (at " + str(time.time()-time_) + " seconds)")
-    center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
     
     
-    if making_body:
-        x,y = pygame.mouse.get_pos()
-        selected_body.x = (x-width/2)*scale
-        start_x = (x-width/2)*scale
-        selected_body.y = (y-height/2)*scale
-        start_y = (y-height/2)*scale
-        selected_body.draw()
-        
-
-    if making_body_2:
-        if pygame.mouse.get_pressed()[0]:
-            x,y = pygame.mouse.get_pos()
-            #selected_body.x = (x-width/2)*scale
-            #selected_body.y = (y-height/2)*scale
+    if bottom_panel:
+        if bottom_panel_type == 1:
             if making_body:
-                making_body = False
+                x,y = pygame.mouse.get_pos()
+                selected_body.x = (x-width/2)*scale
+                start_x = (x-width/2)*scale
+                selected_body.y = (y-height/2)*scale
+                start_y = (y-height/2)*scale
+                selected_body.draw()
+                
 
-            selected_body.xspeed = (start_x - (x-width/2)*scale)/2
-            selected_body.yspeed = (start_y - (y-height/2)*scale)/2
-            selected_body.draw()
-        else:
-            selected_body.draw()
-            bodies.append(selected_body)
-            making_body_2 = False
-        
-        
-        
+            if making_body_2:
+                if pygame.mouse.get_pressed()[0]:
+                    x,y = pygame.mouse.get_pos()
+                    #selected_body.x = (x-width/2)*scale
+                    #selected_body.y = (y-height/2)*scale
+                    if making_body:
+                        making_body = False
+
+                    selected_body.xspeed = (start_x - (x-width/2)*scale)/2
+                    selected_body.yspeed = (start_y - (y-height/2)*scale)/2
+                    selected_body.draw()
+                else:
+                    selected_body.draw()
+                    bodies.append(selected_body)
+                    making_body_2 = False
+                    
+        if bottom_panel_type == 2:
+            for i in range(len(bodies)):
+                panel_rank = 0
+
+                if bodies[i].name == panel_body.name:
+                    panel_rank = i
+                    break
+            
+            if panel_rank > len(bodies) - 1:
+                panel_rank = 0
+            
+    center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
 
 
 
@@ -703,6 +745,14 @@ while playing:
             display_bodies.append(display_small_planet)
             display_bodies.append(display_large_asteroid)
             display_bodies.append(display_small_asteroid)
+            bottom_panel(display_bodies, bottom_panel_type)
+
+        if bottom_panel_type == 2:
+            display_bodies = []
+            i = 0
+            while i < 8 and i < len(bodies):
+                display_bodies.append(body(0, 0, 0, 0, bodies[i].mass, bodies[i].color, bodies[i].name))
+                i += 1
             bottom_panel(display_bodies, bottom_panel_type)
             
 
