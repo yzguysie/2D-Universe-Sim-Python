@@ -1,6 +1,9 @@
 # 2D-Universe-Sim-Python
-Not Good but a universe simulator made using pygame
 
-If you want to edit things you can
+Instructions:
+run the Game file in python idle
 
+uses pygame 2.20
+
+If read_from_file is enabled, you need to have the .ini file and name it 2D Universe Sandbox.ini
 
