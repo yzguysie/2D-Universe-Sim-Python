@@ -25,7 +25,7 @@ settings_preset = config.getint('engine', 'settings_preset')
 """
 
 width, height = 1280, 720
-speed = 10
+speed = 1000
 fps = 60
 settings_preset = ""
 
@@ -42,7 +42,7 @@ draw_shine = True
 aa_bodies = True
 dist_before_deletion = 25000
 panel = True
-gravity = 10
+gravity = 1000
 
 font = 'arial'
 font_width = int(width/100+1)
@@ -67,8 +67,10 @@ space_dust_x_speed_variation = 300
 space_dust_y_speed_variation = 300
 space_dust_min_radius = 1
 space_dust_max_radius = 10
-EXPLOSION_FRAGMENT_COUNT = 25
 mass_before_exploding = 1000
+EXPLOSION_FRAGMENT_COUNT = 50
+EXPLOSION_POSITION_RANGE = 10
+EXPLOSION_MOMENTUM_RANGE = .01
 
 bottom_panel = True
 bottom_panel_type = 1
@@ -111,6 +113,7 @@ if read_from_file:
 
     bottom_panel_type = config.getint('engine', 'bottom_panel_type')
     # update existing value
+
 
 if (settings_preset == 1):
     enable_trails = False
@@ -186,13 +189,18 @@ yellow = (255, 255, 0)
 idk = (255, 0, 255)
 idk2 = (0, 255, 255)
 
+
 gray = (128, 128, 128)
 dark_gray = (64, 64, 64)
 light_gray = (192, 192, 192)
 light_blue = (102, 178, 255)
 dark_blue = (0, 0, 192)
+orange = (255,128,0)
+light_orange = (255,192,72)
+lighter_orange = (255,225,192)
 
-EXPLOSION_MOMENTUM_RANGE = 100
+
+
 
 bottom_panel = True
 
@@ -202,8 +210,17 @@ display_update_time = 0
 
 frames = 0
 ticks = 0
+camera_x, camera_y = width/2, height/2
+
+
+body_id = 0
+
+def get_screen_pos(x, y, camera_x, camera_y,  scale):
+    return ((x/scale-camera_x), (y/scale-camera_y))
+
 class body:
     def __init__(self, x, y, xspeed, yspeed, mass, color, name):
+        global body_id
         self.x = x
         self.y = y
         self.xspeed = xspeed
@@ -214,14 +231,16 @@ class body:
         self.name = name
         self.last_pos_x = []
         self.last_pos_y = []
+        self.id = body_id
+        body_id += 1
 
     def draw(self):
-        if abs(self.x/scale+width/2) < width+self.radius/scale and abs(self.y/scale+height/2) < height+self.radius/scale:
-            pygame.gfxdraw.filled_circle(window, int(self.x/scale+width/2), int(self.y/scale+height/2), int(self.radius/scale+.5), self.color)
+        if abs(self.x/scale+camera_x) < width+self.radius/scale and abs(self.y/scale+camera_y) < height+self.radius/scale:
+            pygame.gfxdraw.filled_circle(window, int(self.x/scale+camera_x), int(self.y/scale+camera_y), int(self.radius/scale+.5), self.color)
             if aa_bodies:
-                pygame.gfxdraw.aacircle(window, int(self.x/scale+width/2), int(self.y/scale+height/2), int(self.radius/scale+.5), self.color)
+                pygame.gfxdraw.aacircle(window, int(self.x/scale+camera_x), int(self.y/scale+camera_y), int(self.radius/scale+.5), self.color)
             if draw_shine:
-                pygame.draw.circle(window, white, (int(self.x/scale+width/2), int(self.y/scale+height/2)), int((self.radius*0.8)/scale+.5), int(self.radius/scale/5), draw_top_right=True)
+                pygame.draw.circle(window, white, (int(self.x/scale+camera_x), int(self.y/scale+camera_y)), int((self.radius*0.8)/scale+.5), int(self.radius/scale/5), draw_top_right=True)
 
     def draw_at_coords(self):
 
@@ -244,17 +263,17 @@ class body:
             if i == 0:
                 x_dist = self.last_pos_x[i] - self.x
                 y_dist = self.last_pos_y[i] - self.y
-                points = [((self.x)/scale+width/2,(self.y)/scale+height/2)]
+                points = [((self.x)/scale+camera_x,(self.y)/scale+camera_y)]
                 if len(self.last_pos_x) < 3:
-                    pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+width/2,((self.last_pos_y[i])+0*(1))/scale+height/2), ((self.x)/scale+width/2,(self.y)/scale+height/2), int((self.radius/(3*scale)+.5)))
+                    pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y), ((self.x)/scale+camera_x,(self.y)/scale+camera_y), int((self.radius/(3*scale)+.5)))
 
             else:
                
                 x_dist = self.last_pos_x[i] - self.x
                 y_dist = self.last_pos_y[i] - self.y
-                points.append(((((self.last_pos_x[i]))/scale)+width/2,((self.last_pos_y[i])+0*(1))/scale+height/2))
+                points.append(((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y))
                 if len(self.last_pos_x) < 3:
-                    pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+width/2,((self.last_pos_y[i])+0*(1))/scale+height/2), ((self.last_pos_x[i-1])/scale+width/2,(self.last_pos_y[i-1])/scale+height/2), int((self.radius/(3*scale))+1))
+                    pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y), ((self.last_pos_x[i-1])/scale+camera_x,(self.last_pos_y[i-1])/scale+camera_y), int((self.radius/(3*scale))+1))
         if len(self.last_pos_x) > 2:
             pygame.draw.lines(window, self.color, False, points, int((self.radius/(3*scale))+1))
     def consume(self, consumed):
@@ -271,8 +290,8 @@ class body:
         self.y = ((self.y*self.mass)+(consumed.y*consumed.mass))/combined_mass
         self.mass += consumed.mass
         for i in range(len(bodies)):
-            if bodies[i].name == consumed.name:
-                bodies_to_delete.add(consumed.name)
+            if bodies[i].id == consumed.id:
+                bodies_to_delete.add(consumed.id)
                 break
 
     def collide(self, num_bodies):
@@ -289,20 +308,20 @@ class body:
 
 
     def explode(self, num_bodies):
-        
+        num_bodies = int(num_bodies*self.mass/1000)
         mass_to_go = self.mass/1.1
         bodies_to_go = num_bodies
 
         for i in range(num_bodies):
             currentMass = mass_to_go/bodies_to_go
-            currentX = self.x+random.randint(-int(self.radius*4), int(self.radius*4))
-            currentY = self.y+random.randint(-int(self.radius*4), int(self.radius*4))
-            currentXspeed = self.xspeed + random.randint(-EXPLOSION_MOMENTUM_RANGE, EXPLOSION_MOMENTUM_RANGE)
-            currentYspeed = self.yspeed + random.randint(-EXPLOSION_MOMENTUM_RANGE, EXPLOSION_MOMENTUM_RANGE)
+            currentX = self.x+random.randint(-int(self.radius*EXPLOSION_POSITION_RANGE), int(self.radius*EXPLOSION_POSITION_RANGE))
+            currentY = self.y+random.randint(-int(self.radius*EXPLOSION_POSITION_RANGE), int(self.radius*EXPLOSION_POSITION_RANGE))
+            currentXspeed = self.xspeed + random.randint(int(-EXPLOSION_MOMENTUM_RANGE*self.mass), int(EXPLOSION_MOMENTUM_RANGE*self.mass))
+            currentYspeed = self.yspeed + random.randint(int(-EXPLOSION_MOMENTUM_RANGE*self.mass), int(EXPLOSION_MOMENTUM_RANGE*self.mass))
             bodies.append(body(currentX, currentY, currentXspeed, currentYspeed, currentMass, self.color, self.name+" fragment " + str(i)))
             bodies_to_go -= 1
             mass_to_go -= currentMass
-            bodies_to_delete.add(self.name)
+            bodies_to_delete.add(self.id)
 
 def calc_center_of_mass(bodies):
     center_x = 0
@@ -319,7 +338,12 @@ def print_time_used(time_name, time, used_time, total_time):
     print("Time used for " + time_name + ": " + str(int(time*10000)/10000))
     print("Percent of used time" + ": " + str(int(time*10000/used_time)/100) + "%")
     print("Percent of total time" + ": " + str(int(time*10000/total_time)/100) + "%")
-bodies = [body(width/2+100, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
+bodies = [body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
+          body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
+          body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
+          body(width/2, height/2-500, 15, 0, 5, blue, "Earth"),
+          body(width/2, height/2-900, 11, 0, 3, light_orange, "Mars"),
+          body(width/2, height/2-2000, 7, 0, 25, lighter_orange, "Jupiter"),
           ]
 display_bodies = []
 
@@ -356,25 +380,35 @@ def all_pair(items, func, data):
 
         trail_draw_time += time.time()-trail_draw_start
         if abs(currentbody.x - items[0].x) > dist_before_deletion or abs(currentbody.y - items[0].y) > dist_before_deletion:
-            bodies_to_delete.add(currentbody.name)
+            bodies_to_delete.add(currentbody.id)
 
     Trails_time += time.time()-trail_start
        
 def bodies_gravity(body_a, body_b, bodies_to_delete):
-    while body_a.name==body_b.name:
-        body_b.name += str("-copy")
+    while body_a.id == body_b.id:
+        body_b.id += 99999999999
+        print("AW HELL NAH IDS THE SAME HOW")
     body_distance_x, body_distance_y, body_distance = body_a.calc_distance(body_b)
     if body_distance == 0:
         print("WARN: DIVISION BY 0 in bodies_gravity (body_distance = 0) (at " + str(time.time()-time_) + " seconds)")
         body_distance = 0.001
-    body_force_x = ((body_a.mass*body_b.mass)/body_distance**2)*body_distance_x*gravity
-    body_force_y = ((body_a.mass*body_b.mass)/body_distance**2)*body_distance_y*gravity
 
+    
+
+    angle = math.atan2(body_a.y - body_b.y, body_a.x - body_b.x)
+    vector = pygame.math.Vector2(math.cos(angle), math.sin(angle))
+
+
+    
+    body_force_x = ((body_a.mass*body_b.mass)/body_distance**2)*vector[0]*gravity
+    body_force_y = ((body_a.mass*body_b.mass)/body_distance**2)*vector[1]*gravity
+    
     body_a.xspeed -= (body_force_x/body_a.mass)/(tickrate/speed)
     body_a.yspeed -= (body_force_y/body_a.mass)/(tickrate/speed)
    
     body_b.xspeed += (body_force_x/body_b.mass)/(tickrate/speed)
     body_b.yspeed += (body_force_y/body_b.mass)/(tickrate/speed)
+    
 
     if body_distance < body_b.radius+body_a.radius:
        
@@ -383,7 +417,6 @@ def bodies_gravity(body_a, body_b, bodies_to_delete):
            
         else:
             body_b.consume(body_a)
-
            
 def bodies_draw(items):
     
@@ -392,6 +425,11 @@ def bodies_draw(items):
 
 
 def move_all(items, x, y):
+    global camera_x
+    global camera_y
+    global grid_offset_x
+    global grid_offset_y
+    
     for body in items:
         body.x += x
         body.y += y
@@ -400,6 +438,12 @@ def move_all(items, x, y):
            
         for i in range(len(body.last_pos_y)):
             body.last_pos_y[i] += y
+
+    grid_offset_x += x/scale
+    grid_offset_y += y/scale
+    
+    #camera_x -= x
+    #camera_y -= y
 
 def info_panel(body):
     panel_width = width/8
@@ -427,7 +471,7 @@ def info_panel(body):
     for i in range(len(bodies)):
         panel_rank = 0
 
-        if bodies[i].name == panel_body.name:
+        if bodies[i].id == panel_body.id:
             panel_rank = i
             break
     dialogue = dialogue_font.render("Size Rank: " + str(panel_rank+1) + "/" + str(len(bodies)), True, white)
@@ -439,11 +483,71 @@ add_panel_height = height/5
 add_panel_x = width/16
 add_panel_y = height-add_panel_height
 
+grid_offset_x = 0
+grid_offset_y = 0
+def draw_grid():
+
+    
+    global grid_offset_x
+    global grid_offset_y
+    dist_between = 100/scale
+    
+    #If too many lines, divide lines by 2
+    lines = int(scale*10)
+    while lines > 20:
+        lines /= 2
+        dist_between *= 2
+        lines = int(lines)
+
+    #If too little lines,  lines by 2
+    while lines < 10:
+        lines *= 2
+        dist_between /= 2
 
 
+    if grid_offset_x > dist_between/2:
+        grid_offset_x = - dist_between/2
 
+    if grid_offset_x < -dist_between/2:
+        grid_offset_x = dist_between/2
 
+    if grid_offset_y > dist_between/2:
+        grid_offset_y = - dist_between/2
 
+    if grid_offset_y < -dist_between/2:
+        grid_offset_y = dist_between/2
+
+    
+    for i in range(lines):
+        pygame.draw.line(window, gray, (0, i*(dist_between)+grid_offset_y), (width, i*(dist_between)+grid_offset_y))
+    for i in range(lines*2):
+        pygame.draw.line(window, gray, (i*(dist_between)+grid_offset_x, 0), (i*(dist_between)+grid_offset_x, height))
+
+def display_bodies_on_panel(panel_rect, display_bodies):
+    add_panel_x, add_panel_y, add_panel_width, add_panel_height = panel_rect
+    #Make the displayed bodies bigger or smaller depending on radius of biggest displayed body
+    bigrad = display_bodies[0].radius
+
+    for thing in display_bodies:
+        if isinstance(thing.radius, complex):
+            thing.radius = thing.radius.real
+        thing.radius /= bigrad/(add_panel_height/3)
+        
+    for i in range(len(display_bodies)):
+        display_body = display_bodies[i]
+
+        #Spread out bodies evenly on panel, then draw them
+        display_body.x = (add_panel_x+(i/len(display_bodies))*(add_panel_width))+add_panel_width/len(display_bodies)/2
+        display_body.y = (height-add_panel_height/2)
+        display_body.draw_at_coords()
+        
+        dialogue = dialogue_font.render(display_body.name, True, white)
+        dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y-(display_body.radius)-font_width))
+        window.blit(dialogue, dialogue_rect)
+
+        dialogue = dialogue_font.render(str(int(display_body.mass+.5)), True, white)
+        dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y+(display_body.radius)+font_width))
+        window.blit(dialogue, dialogue_rect)
 
 def bottom_panel(display_bodies, bottom_panel_type):
     panel_rect = (add_panel_x, add_panel_y, add_panel_width, add_panel_height)
@@ -451,26 +555,13 @@ def bottom_panel(display_bodies, bottom_panel_type):
 
     
     if bottom_panel_type == 1:
-        for i in range(len(display_bodies)):
-            display_body = display_bodies[i]
-            display_body.x = (add_panel_x+(i/len(display_bodies))*(add_panel_width))+add_panel_width/len(display_bodies)/2
-            display_body.y = (height-add_panel_height/2)
-            display_body.draw_at_coords()
+        display_bodies_on_panel(panel_rect, display_bodies)
+        
             
-            dialogue = dialogue_font.render(display_body.name, True, white)
-            dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y-(display_body.radius)-font_width))
-            window.blit(dialogue, dialogue_rect)
-            
-    elif bottom_panel_type == 2:
-        for i in range(len(display_bodies)):
-            display_body = display_bodies[i]
-            display_body.x = (add_panel_x+(i/len(display_bodies))*(add_panel_width))+add_panel_width/len(display_bodies)/2
-            display_body.y = (height-add_panel_height/2)
-            display_body.draw_at_coords()
 
-            dialogue = dialogue_font.render(display_body.name, True, white)
-            dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y-(display_body.radius)-font_width))
-            window.blit(dialogue, dialogue_rect)
+    elif bottom_panel_type == 2:
+        display_bodies_on_panel(panel_rect, display_bodies)
+        
     
     
 
@@ -480,7 +571,7 @@ pygame.display.set_caption('Budget Universe Sandbox')
 
 
 clock = pygame.time.Clock()
-move_all(bodies, -width/2, -height/2)
+#move_all(bodies, -width/2, -height/2)
 panel_body = body(width/2, height/2-250, 30, 0, 10, blue, "noonebetterusethisnameorproblemswilloccur")
 if len(bodies) > 0:
     panel_body = bodies[0]
@@ -503,6 +594,7 @@ while playing:
     dialogue = dialogue_font.render("FPS: " + str(fps_), True, white)
     dialogue_rect = dialogue.get_rect()
     window.blit(dialogue, dialogue_rect)
+    draw_grid()
     
 
     list_sorting_start = time.time()
@@ -532,6 +624,12 @@ while playing:
             x,y = pygame.mouse.get_pos()
             if not follow:
                 move_all(bodies, (x-width/2)*(scale-old_scale), (y-height/2)*(scale-old_scale))
+
+                grid_offset_x += (x)*(scale-old_scale)/scale
+                grid_offset_y += (y)*(scale-old_scale)/scale
+            else:
+                grid_offset_x += (width/2)*(scale-old_scale)/scale
+                grid_offset_y += (height/2)*(scale-old_scale)/scale
 
         if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
             x,y = pygame.mouse.get_pos()
@@ -578,8 +676,9 @@ while playing:
                         if abs(clicked_body.x-x) < clicked_body.radius+5 and abs(clicked_body.y-y) < clicked_body.radius+5:
         
                             for i in range(len(bodies)):
-                                if bodies[i].name == clicked_body.name:
+                                if bodies[i].id == clicked_body.id:
                                     panel_body = bodies[i]
+                                    follow = True
                                     break
 
         elif event.type == pygame.KEYDOWN:
@@ -609,8 +708,10 @@ while playing:
                 follow = not follow
                 
             if event.key == pygame.K_RETURN:
-                if panel_rank+1 < len(bodies):
-                    panel_body = bodies[panel_rank+1]
+                if bottom_panel_type <= 2:
+                    bottom_panel_type += 1
+                else:
+                    bottom_panel_type = 1
                     
             if event.key == pygame.K_TAB:
                 x,y = pygame.mouse.get_pos()
@@ -624,13 +725,14 @@ while playing:
                         currentbody.explode(EXPLOSION_FRAGMENT_COUNT)
                         break
                     
-    bodies = [body for body in bodies if body.name not in bodies_to_delete]
+    bodies = [body for body in bodies if body.id not in bodies_to_delete]
     
     for i in range(len(bodies)):
-        panel_rank = 0
+        
 
-        if bodies[i].name == panel_body.name:
+        if bodies[i].id == panel_body.id:
             panel_rank = i
+             
             break
     
     if panel_rank > len(bodies) - 1:
@@ -669,7 +771,7 @@ while playing:
             for i in range(len(bodies)):
                 panel_rank = 0
 
-                if bodies[i].name == panel_body.name:
+                if bodies[i].id == panel_body.id:
                     panel_rank = i
                     break
             
@@ -677,11 +779,6 @@ while playing:
                 panel_rank = 0
             
     center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
-
-
-
-
-        
 
         
         
@@ -697,7 +794,10 @@ while playing:
         move_all(bodies, -center_x, -center_y)
 
     if follow:
-        move_all(bodies, -center_x, -center_y)
+        if bottom_panel_type > 2:
+            move_all(bodies, -center_x, -center_y)
+        else:
+            move_all(bodies, -center_x, -center_y-add_panel_height/2)
    
     panel_width = width/8
     panel_height = height/2.5
@@ -752,6 +852,7 @@ while playing:
             i = 0
             while i < 8 and i < len(bodies):
                 display_bodies.append(body(0, 0, 0, 0, bodies[i].mass, bodies[i].color, bodies[i].name))
+                display_bodies[i].id = bodies[i].id
                 i += 1
             bottom_panel(display_bodies, bottom_panel_type)
             
