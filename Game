@@ -6,7 +6,8 @@ pygame.init()
 import math
 import random
 import time
-
+import ui
+import copy
 
 from configparser import ConfigParser
 
@@ -54,6 +55,8 @@ time_ = time.time()
 Physics_time = 0
 Trails_time = 0
 Total_time = 0
+Buttons_time = 0
+Metrics_time = 0
 trail_draw_time = 0
 list_sorting_time = 0
 drawing_bodies_time = 0
@@ -67,10 +70,10 @@ space_dust_x_speed_variation = 300
 space_dust_y_speed_variation = 300
 space_dust_min_radius = 1
 space_dust_max_radius = 10
-mass_before_exploding = 1000
-EXPLOSION_FRAGMENT_COUNT = 50
-EXPLOSION_POSITION_RANGE = 10
-EXPLOSION_MOMENTUM_RANGE = .01
+mass_before_exploding = 1500
+EXPLOSION_FRAGMENT_COUNT = 25
+EXPLOSION_POSITION_RANGE = 7
+EXPLOSION_MOMENTUM_RANGE = .005
 
 bottom_panel = True
 bottom_panel_type = 1
@@ -173,12 +176,13 @@ if space_dust_min_radius <= 0:
 if space_dust_max_radius < space_dust_min_radius:
     space_dust_max_radius = space_dust_min_radius
    
-if trail_update_rate > fps:
-    trail_update_rate = fps
+if trail_update_rate > tickrate:
+    trail_update_rate = tickrate
 if trail_update_rate <= 0:
-    trail_update_rate = fps
-if list_sorting_rate > fps:
-    trail_update_rate = fps
+    trail_update_rate = int(tickrate/2)
+if list_sorting_rate > tickrate:
+    trail_update_rate = tickrate
+    
 white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
@@ -195,11 +199,24 @@ dark_gray = (64, 64, 64)
 light_gray = (192, 192, 192)
 light_blue = (102, 178, 255)
 dark_blue = (0, 0, 192)
+blue = (64, 64, 225)
 orange = (255,128,0)
 light_orange = (255,192,72)
 lighter_orange = (255,225,192)
 
+red = (225, 64, 64)
+pink = (255, 96, 96)
+light_red = (255, 96, 96)
 
+green = (64, 225, 64)
+dark_green = (0, 192, 0)
+light_green = (96, 255, 96)
+
+yellow = (225, 225, 64)
+light_yellow = (255, 255, 96)
+dark_yellow = (192, 192, 0)
+
+turquoise = (64, 192, 192)
 
 
 bottom_panel = True
@@ -214,6 +231,10 @@ camera_x, camera_y = width/2, height/2
 
 
 body_id = 0
+
+#temp
+fps = 30
+actual_fps = fps
 
 def get_screen_pos(x, y, camera_x, camera_y,  scale):
     return ((x/scale-camera_x), (y/scale-camera_y))
@@ -250,8 +271,8 @@ class body:
         if draw_shine:
             pygame.draw.circle(window, white, (int(self.x), int(self.y)), int((self.radius*0.8)+.5), int(self.radius/5), draw_top_right=True)
     def move(self):
-        self.x += xspeed
-        self.y += yspeed
+        self.x += xspeed/tickrate
+        self.y += yspeed/tickrate
     def draw_trail(self):
         if len(self.last_pos_x) > trail_length:
             self.last_pos_x.pop(trail_length)
@@ -308,10 +329,10 @@ class body:
 
 
     def explode(self, num_bodies):
-        num_bodies = int(num_bodies*self.mass/1000)
+        num_bodies = int(num_bodies*math.sqrt(self.mass/1500))
         mass_to_go = self.mass/1.1
         bodies_to_go = num_bodies
-
+        bodies_to_delete.add(self.id)
         for i in range(num_bodies):
             currentMass = mass_to_go/bodies_to_go
             currentX = self.x+random.randint(-int(self.radius*EXPLOSION_POSITION_RANGE), int(self.radius*EXPLOSION_POSITION_RANGE))
@@ -321,7 +342,6 @@ class body:
             bodies.append(body(currentX, currentY, currentXspeed, currentYspeed, currentMass, self.color, self.name+" fragment " + str(i)))
             bodies_to_go -= 1
             mass_to_go -= currentMass
-            bodies_to_delete.add(self.id)
 
 def calc_center_of_mass(bodies):
     center_x = 0
@@ -362,24 +382,36 @@ def all_pair(items, func, data):
     global Physics_time
     global Trails_time
     global trail_draw_time
+    global ticks
+    global bodies
+    global bodies_to_delete
     gravity_start = time.time()
-    if frames % int(fps/tickrate) == 0:
+    if tickrate > fps or frames % int(fps/tickrate) == 0:
         for i in range(0, len(items)):
             for j in range(i+1, len(items)):
                 func(items[i], items[j], data)
+            #DELETE THIS (NEXT 2 LINES) AND SEE WHAT HAPPENS because i think somewhere else it tells them to move
+            items[i].x += items[i].xspeed/(tickrate/speed)
+            items[i].y += items[i].yspeed/(tickrate/speed)
+        ticks += 1
     Physics_time += time.time()-gravity_start
+    if enable_trails and ticks % int(tickrate/min(tickrate,trail_update_rate)) == 0:
+        do_trails()
+    bodies = [body for body in bodies if body.id not in bodies_to_delete]
+
+def do_trails():
+    global trail_draw_time
+    global Trails_time
     trail_start = time.time()
-    for i in range(0, len(items)):
-        currentbody = items[i]
-        if enable_trails and frames % int(fps/trail_update_rate) == 0:
-            currentbody.last_pos_x.insert(0, currentbody.x)
-            currentbody.last_pos_y.insert(0, currentbody.y)
-        currentbody.x += currentbody.xspeed/(fps/speed)
-        currentbody.y += currentbody.yspeed/(fps/speed)
+    for i in range(0, len(bodies)):
+        currentbody = bodies[i]
+        currentbody.last_pos_x.insert(0, currentbody.x)
+        currentbody.last_pos_y.insert(0, currentbody.y)
         trail_draw_start = time.time()
+        
 
         trail_draw_time += time.time()-trail_draw_start
-        if abs(currentbody.x - items[0].x) > dist_before_deletion or abs(currentbody.y - items[0].y) > dist_before_deletion:
+        if abs(currentbody.x - bodies[0].x) > dist_before_deletion or abs(currentbody.y - bodies[0].y) > dist_before_deletion:
             bodies_to_delete.add(currentbody.id)
 
     Trails_time += time.time()-trail_start
@@ -492,19 +524,22 @@ def draw_grid():
     global grid_offset_y
     dist_between = 100/scale
     
-    #If too many lines, divide lines by 2
+   
     lines = int(scale*10)
+
+    #If too many lines, divide number of lines by 2
     while lines > 20:
         lines /= 2
         dist_between *= 2
         lines = int(lines)
 
-    #If too little lines,  lines by 2
+    #If too little lines, multiply number of lines by 2
     while lines < 10:
         lines *= 2
         dist_between /= 2
 
-
+    #If the grid is offset more than half the distance between lines, move exactly one line in a seamless manner to keep the grid visible
+        
     if grid_offset_x > dist_between/2:
         grid_offset_x = - dist_between/2
 
@@ -562,7 +597,48 @@ def bottom_panel(display_bodies, bottom_panel_type):
     elif bottom_panel_type == 2:
         display_bodies_on_panel(panel_rect, display_bodies)
         
-    
+def tick_buttons():
+    global saved_system
+    global bodies
+    global paused
+    global speed
+    global enable_trails
+    global tickrate
+    for button in buttons:
+        button.draw()
+        if button.get_clicked():
+            if button == pause_button:
+                paused = not paused
+            elif button == speed_button:
+                speed *= 2
+                tickrate *= 2
+            elif button == slow_button:
+                speed /= 2
+                tickrate /= 2
+            elif button == reset_button:
+                bodies = [body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
+                  body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
+                  body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
+                  body(width/2, height/2-500, 15, 0, 5, blue, "Earth"),
+                  body(width/2, height/2-900, 11, 0, 3, light_orange, "Mars"),
+                  body(width/2, height/2-2000, 7, 0, 25, lighter_orange, "Jupiter"),
+                  ]
+            elif button == toggle_trails_button:
+                enable_trails = not enable_trails
+                for thing in bodies:
+                    thing.last_pos_x = []
+                    thing.last_pos_y = []
+
+            elif button == save_button:
+                saved_system = copy.deepcopy(bodies)
+                print("Saved System")
+
+            elif button == load_button:
+                bodies = copy.deepcopy(saved_system)
+                print("Loaded System")
+
+            else:
+                print("Unknown button (at " + str(time.time()-time_) + " seconds)")
     
 
 pygame.mouse.set_visible(True)
@@ -585,12 +661,94 @@ selected_body = body(width/2, height/2-250, 30, 0, 10, blue, "User made " + str(
 making_body = False
 playing = True
 start = time.time()-1
+buttons = []
+
+button_height = height/25
+pause_button = ui.button(window, width-width/5, button_height*.2, width/20, button_height, "Pause", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+reset_button = ui.button(window, width-width/5, button_height*1.2, width/20, button_height, "Reset", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+slow_button = ui.button(window, width-width/5, button_height*2.2, width/10, button_height, "Slow Down", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+speed_button = ui.button(window, width-width/5, button_height*3.2, width/10, button_height, "Speed Up", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+toggle_trails_button = ui.button(window, width-width/5, button_height*4.2, width/10, button_height, "Toggle Trails", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+save_button = ui.button(window, width-width/5, button_height*5.2, width/20, button_height, "Save", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+load_button = ui.button(window, width-width/5, button_height*6.2, width/20, button_height, "Load", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+
+buttons.append(pause_button)
+buttons.append(slow_button)
+buttons.append(speed_button)
+buttons.append(reset_button)
+buttons.append(toggle_trails_button)
+buttons.append(save_button)
+buttons.append(load_button)
+
+
+saved_system = [body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
+                body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
+                body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
+                body(width/2, height/2-500, 15, 0, 5, blue, "Earth"),
+                body(width/2, height/2-900, 11, 0, 3, light_orange, "Mars"),
+                body(width/2, height/2-2000, 7, 0, 25, lighter_orange, "Jupiter"),
+                ]
+
+def copy_depth_2(src):
+    dst = []
+    for item in src:
+        dst.append(copy.copy(item))
+
+    return dst
+
+def mouse_over_anything():
+    for button in buttons:
+        if button.mouse_over():
+            return True
+    return False
+
+paused = False
+ticks = 0
+
+
+
+    	
+def disp_metrics():
+    dialogue = dialogue_font.render("FPS: " + str(fps_), True, white)
+    dialogue_rect = dialogue.get_rect()
+    window.blit(dialogue, dialogue_rect)
+    dialogue = dialogue_font.render("Bodies: " + str(len(bodies)), True, white)
+    window.blit(dialogue, (0, height/40))
+    dialogue = dialogue_font.render("Speed: " + str(speed/20), True, white)
+    window.blit(dialogue, (0, height/40*2))
+    dialogue = dialogue_font.render("Tickrate: " + str(tickrate), True, white)
+    window.blit(dialogue, (0, height/40*3))
+
+    total_mass = 0
+    for thing in bodies:
+        total_mass += thing.mass
+    dialogue = dialogue_font.render("Total mass: " + str(total_mass), True, white)
+    window.blit(dialogue, (0, height/40*4))
+    dialogue = dialogue_font.render("Scale: " + str(scale), True, white)
+    window.blit(dialogue, (0, height/40*5))
+
+
+#The bodies that user can pick from the bottom panel
+display_large_star = body(0, 0, 0, 0, 2500, light_blue, "Large Star (Display)")
+display_small_star = body(0, 0, 0, 0, 500, yellow, "Small Star (Display)")
+display_negative_mass_star = body(0, 0, 0, 0, 500, yellow, "Negative Star (Display)")
+display_negative_mass_star.mass = -500
+display_negative_mass_star.radius = 50
+display_large_planet = body(0, 0, 0, 0, 200, dark_blue, "Large Planet (Display)")
+display_small_planet = body(0, 0, 0, 0, 50, blue, "Small Planet (Display)")
+display_large_asteroid = body(0, 0, 0, 0, 20, gray, "Large Asteroid (Display)")
+display_small_asteroid = body(0, 0, 0, 0, 5, light_gray, "Small Asteroid (Display)")
+last_time = time.time()-1
 
 while playing:
-    if frames % int(fps/10) == 0:
-        fps_ = int(1/(time.time()-start)+.5)
+
+    #Only update fps counter every 5th of a second to increase readability
+    if frames % int(fps/5) == 0:
+        fps_ = int(1/((time.time()-last_time)/(fps/5))+.5)
+        last_time = time.time()
     start = time.time()
     window.fill(background_color)
+ 
     dialogue = dialogue_font.render("FPS: " + str(fps_), True, white)
     dialogue_rect = dialogue.get_rect()
     window.blit(dialogue, dialogue_rect)
@@ -604,8 +762,23 @@ while playing:
     list_sorting_time += time.time()-list_sorting_start
     mouse_x_change, mouse_y_change = pygame.mouse.get_rel()
     bodies_to_delete = set()
-    all_pair(bodies, bodies_gravity, bodies_to_delete)
 
+    
+    if not paused:
+        fps = actual_fps
+        if tickrate > fps:
+
+            for i in range(int(tickrate/fps)):
+                if time.time()-start < 1/fps:
+                    all_pair(bodies, bodies_gravity, bodies_to_delete)
+                    bodies = [body for body in bodies if body.id not in bodies_to_delete]
+
+        else:
+            all_pair(bodies, bodies_gravity, bodies_to_delete)
+            bodies = [body for body in bodies if body.id not in bodies_to_delete]
+    else:
+        fps = 10
+        
     
 
     for event in pygame.event.get():
@@ -631,7 +804,8 @@ while playing:
                 grid_offset_x += (width/2)*(scale-old_scale)/scale
                 grid_offset_y += (height/2)*(scale-old_scale)/scale
 
-        if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
+        #Check if user is clicking in an attempt to make a body
+        if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0] and not mouse_over_anything():
             x,y = pygame.mouse.get_pos()
             """
             for currentbody in bodies:
@@ -720,11 +894,6 @@ while playing:
                         currentbody.explode(EXPLOSION_FRAGMENT_COUNT)
                         break
                     
-                for currentbody in bodies:
-                    if abs(((currentbody.x/scale)+width/2)-x) < currentbody.radius/scale+15 and abs(((currentbody.y/scale)+height/2)-y) < currentbody.radius/scale+15:
-                        currentbody.explode(EXPLOSION_FRAGMENT_COUNT)
-                        break
-                    
     bodies = [body for body in bodies if body.id not in bodies_to_delete]
     
     for i in range(len(bodies)):
@@ -801,7 +970,7 @@ while playing:
    
     panel_width = width/8
     panel_height = height/2.5
-    panel_x = width-panel_width
+    panel_x = width-panel_width*1.1
     panel_y = height/2-panel_height/2
     panel_rect = (panel_x, panel_y, panel_width, panel_height)
 
@@ -828,15 +997,6 @@ while playing:
     if bottom_panel:
         if bottom_panel_type == 1:
             display_bodies = []
-            display_large_star = body(0, 0, 0, 0, 2500, light_blue, "Large Star (Display)")
-            display_small_star = body(0, 0, 0, 0, 500, yellow, "Small Star (Display)")
-            display_negative_mass_star = body(0, 0, 0, 0, 500, yellow, "Negative Star (Display)")
-            display_negative_mass_star.mass = -500
-            display_negative_mass_star.radius = 50
-            display_large_planet = body(0, 0, 0, 0, 200, dark_blue, "Large Planet (Display)")
-            display_small_planet = body(0, 0, 0, 0, 50, blue, "Small Planet (Display)")
-            display_large_asteroid = body(0, 0, 0, 0, 20, gray, "Large Asteroid (Display)")
-            display_small_asteroid = body(0, 0, 0, 0, 5, light_gray, "Small Asteroid (Display)")
 
             display_bodies.append(display_large_star)
             display_bodies.append(display_small_star)
@@ -850,12 +1010,14 @@ while playing:
         if bottom_panel_type == 2:
             display_bodies = []
             i = 0
-            while i < 8 and i < len(bodies):
+            for i in range(min(len(bodies), 8)):
                 display_bodies.append(body(0, 0, 0, 0, bodies[i].mass, bodies[i].color, bodies[i].name))
                 display_bodies[i].id = bodies[i].id
-                i += 1
             bottom_panel(display_bodies, bottom_panel_type)
             
+    if panel_body not in bodies:
+        if len(bodies) != 0:
+            panel_body = bodies[0]        
 
     if panel:
         info_panel(panel_body)
@@ -863,10 +1025,23 @@ while playing:
     center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
 
    
-    dialogue = dialogue_font.render("Bodies: " + str(len(bodies)), True, white)
-    dialogue_rect = dialogue.get_rect(center=(width/30, height/30))
-    window.blit(dialogue, dialogue_rect)
+    start = time.time()
+
+    disp_metrics()
+
+    Metrics_time += time.time()-start
+
+    if paused:
+        pause_button.text = "START"
+    else:
+        pause_button.text = "PAUSE"
+
+    start = time.time()
+    tick_buttons()
+    Buttons_time += time.time()-start
     
+    #FIX
+    #pygame.gfxdraw.aacircle(window, int(x_to_screen(panel_body.x)), int(y_to_screen(panel_body.y)), int(panel_body.radius/scale+1), (255, 255, 255))
     
     display_update_start = time.time()
     pygame.display.flip()
@@ -876,8 +1051,8 @@ while playing:
     frames += 1
     fps_counter = time.time()-start
    
-    if frames % int(fps/list_sorting_rate) == 0:
-        ticks += 1
+    #if frames % int(fps/list_sorting_rate) == 0:
+    #    ticks += 1
    
 
 print()
@@ -899,8 +1074,12 @@ print()
 print("Display.flip():")
 print_time_used("updating display", display_update_time, Total_time, time.time()-time_)
 print()
-
+print("Buttons:")
+print_time_used("ticking buttons", display_update_time, Total_time, time.time()-time_)
+print()
+print("Metrics:")
+print_time_used("blitting metrics", display_update_time, Total_time, time.time()-time_)
+print()
 
 pygame.quit()
-
 
