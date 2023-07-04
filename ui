@@ -16,17 +16,19 @@ class button:
         self.text_size = int(width/len(text)*1.5)
         self.font = pygame.font.SysFont('Times New Roman', self.text_size)
         self.being_clicked = False
+        self.enabled = True
 
     def draw(self):
-        pygame.draw.rect(self.surface, self.color, self.rect)
-        pygame.draw.rect(self.surface, self.border_color, self.rect, int(min(self.width, self.height)/25))
-        self.surface.blit(self.font.render(self.text, False, self.text_color), (self.rect[0]+(self.rect[2]-(self.text_size*len(self.text))/1.6), self.rect[1]+(self.rect[3]-self.text_size)/2))
-        
+        if self.enabled:
+            pygame.draw.rect(self.surface, self.color, self.rect)
+            pygame.draw.rect(self.surface, self.border_color, self.rect, int(min(self.width, self.height)/25))
+            self.surface.blit(self.font.render(self.text, False, self.text_color), (self.rect[0]+(self.rect[2]-(self.text_size*len(self.text))/1.6), self.rect[1]+(self.rect[3]-self.text_size)/2))
+           
     def update(self):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def get_clicked(self):
-        if pygame.mouse.get_pressed()[0] and self.mouse_over():
+        if pygame.mouse.get_pressed()[0] and self.mouse_over() and self.enabled:
             if not self.being_clicked:
                 self.being_clicked = True
                 self.rect = pygame.Rect(self.x+min(self.width, self.height)/20, self.y+min(self.width, self.height)/20, self.width-min(self.width, self.height)/10, self.height-min(self.width, self.height)/10)
@@ -45,7 +47,7 @@ class button:
 
     def mouse_over(self):
         x, y = pygame.mouse.get_pos()
-        if x >= self.x and x <= self.x+self.width:
+        if x >= self.x and x <= self.x+self.width and self.enabled:
             return y >= self.y and y <= self.y+self.height
         return False
 
