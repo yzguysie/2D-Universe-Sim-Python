@@ -1,5 +1,10 @@
 # 2D-Universe-Sim-Python
 
+
+WARNING: Look i dont really know what im doing or how im supposed to help you run this but i tried
+
+
+
 Instructions:
 run the Game file in python idle
 
