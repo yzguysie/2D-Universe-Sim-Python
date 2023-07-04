@@ -41,8 +41,8 @@ background_color = (0, 0, 0)
 follow = True
 draw_shine = True
 aa_bodies = True
-dist_before_deletion = 25000
-panel = True
+dist_before_deletion = 250000
+info_panel = True
 gravity = 1000
 
 font = 'arial'
@@ -88,7 +88,7 @@ bottom_panel_type = 1
 
 # parse existing file
 
-read_from_file = True
+read_from_file = False
 
 if read_from_file:
     config.read('2D Universe Sandbox.ini')
@@ -104,7 +104,7 @@ if read_from_file:
     dist_before_deletion = config.getint('engine', 'dist_before_deletion')
     gravity = config.getint('engine', 'gravity')
     speed = config.getint('engine', 'speed')
-    
+   
     enable_space_dust = config.getboolean('spaceDust','enable_space_dust')
     space_dust_amount = config.getint('spaceDust', 'space_dust_amount')
     space_dust_x_variation = config.getint('spaceDust', 'space_dust_x_variation')
@@ -182,7 +182,7 @@ if trail_update_rate <= 0:
     trail_update_rate = int(tickrate/2)
 if list_sorting_rate > tickrate:
     trail_update_rate = tickrate
-    
+   
 white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
@@ -302,7 +302,7 @@ class body:
             self.explode(EXPLOSION_FRAGMENT_COUNT)
             consumed.explode(EXPLOSION_FRAGMENT_COUNT)
             return
-            
+           
         combined_mass = self.mass+consumed.mass
         self.radius = math.pow((self.radius**3+consumed.radius**3), 1/3)
         self.xspeed = ((self.xspeed*self.mass)+(consumed.xspeed*consumed.mass))/combined_mass
@@ -316,7 +316,7 @@ class body:
                 break
 
     def collide(self, num_bodies):
-        pass     
+        pass    
                
 
     def calc_distance(self, other):
@@ -325,7 +325,7 @@ class body:
         total_dist = (math.sqrt(x_dist**2+y_dist**2))
         return (x_dist, y_dist, total_dist)
 
-    
+   
 
 
     def explode(self, num_bodies):
@@ -358,13 +358,17 @@ def print_time_used(time_name, time, used_time, total_time):
     print("Time used for " + time_name + ": " + str(int(time*10000)/10000))
     print("Percent of used time" + ": " + str(int(time*10000/used_time)/100) + "%")
     print("Percent of total time" + ": " + str(int(time*10000/total_time)/100) + "%")
-bodies = [body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
-          body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
-          body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
-          body(width/2, height/2-500, 15, 0, 5, blue, "Earth"),
-          body(width/2, height/2-900, 11, 0, 3, light_orange, "Mars"),
-          body(width/2, height/2-2000, 7, 0, 25, lighter_orange, "Jupiter"),
-          ]
+saved_system = [body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
+                body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
+                body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
+                body(width/2, height/2-500, 15, 0, 5, blue, "Earth"),
+                body(width/2, height/2-900, 11, 0, 3, light_orange, "Mars"),
+                body(width/2, height/2-2000, 7, 0, 25, lighter_orange, "Jupiter"),
+                body(width/2, height/2-5000, 4.8, 0, 12, lighter_orange, "Saturn"),
+                body(width/2, height/2-8000, 4, 0, 8, light_blue, "Uranus"),
+                body(width/2, height/2-10000, 3.6, 0, 9, dark_blue, "Neptune"),              
+                ]
+bodies = copy.deepcopy(saved_system)
 display_bodies = []
 
 if enable_space_dust:
@@ -408,7 +412,7 @@ def do_trails():
         currentbody.last_pos_x.insert(0, currentbody.x)
         currentbody.last_pos_y.insert(0, currentbody.y)
         trail_draw_start = time.time()
-        
+       
 
         trail_draw_time += time.time()-trail_draw_start
         if abs(currentbody.x - bodies[0].x) > dist_before_deletion or abs(currentbody.y - bodies[0].y) > dist_before_deletion:
@@ -425,22 +429,22 @@ def bodies_gravity(body_a, body_b, bodies_to_delete):
         print("WARN: DIVISION BY 0 in bodies_gravity (body_distance = 0) (at " + str(time.time()-time_) + " seconds)")
         body_distance = 0.001
 
-    
+   
 
     angle = math.atan2(body_a.y - body_b.y, body_a.x - body_b.x)
     vector = pygame.math.Vector2(math.cos(angle), math.sin(angle))
 
 
-    
+   
     body_force_x = ((body_a.mass*body_b.mass)/body_distance**2)*vector[0]*gravity
     body_force_y = ((body_a.mass*body_b.mass)/body_distance**2)*vector[1]*gravity
-    
+   
     body_a.xspeed -= (body_force_x/body_a.mass)/(tickrate/speed)
     body_a.yspeed -= (body_force_y/body_a.mass)/(tickrate/speed)
    
     body_b.xspeed += (body_force_x/body_b.mass)/(tickrate/speed)
     body_b.yspeed += (body_force_y/body_b.mass)/(tickrate/speed)
-    
+   
 
     if body_distance < body_b.radius+body_a.radius:
        
@@ -451,7 +455,7 @@ def bodies_gravity(body_a, body_b, bodies_to_delete):
             body_b.consume(body_a)
            
 def bodies_draw(items):
-    
+   
     for body in items:
         body.draw()
 
@@ -461,7 +465,7 @@ def move_all(items, x, y):
     global camera_y
     global grid_offset_x
     global grid_offset_y
-    
+   
     for body in items:
         body.x += x
         body.y += y
@@ -473,33 +477,33 @@ def move_all(items, x, y):
 
     grid_offset_x += x/scale
     grid_offset_y += y/scale
-    
+   
     #camera_x -= x
     #camera_y -= y
 
-def info_panel(body):
-    panel_width = width/8
-    panel_height = height/2.5
-    panel_x = width-panel_width
-    panel_y = height/2-panel_height/2
-    panel_rect = (panel_x, panel_y, panel_width, panel_height)
-    
-    pygame.draw.rect(window, dark_gray, panel_rect)
-        
+def make_info_panel(body):
+    info_panel_width = width/8
+    info_panel_height = height/2.5
+    info_panel_x = width-info_panel_width
+    info_panel_y = height/2-info_panel_height/2
+    info_panel_rect = (info_panel_x, info_panel_y, info_panel_width, info_panel_height)
+   
+    pygame.draw.rect(window, dark_gray, info_panel_rect)
+       
     dialogue = dialogue_font.render("Name: " + panel_body.name, True, white)
-    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width)))
-    
+    window.blit(dialogue, (width-info_panel_width+font_width/2, height/2-(info_panel_height/2-font_width)))
+   
     dialogue = dialogue_font.render("Radius: " + str(int(panel_body.radius+.5)), True, white)
-    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*2.5)))
-    
+    window.blit(dialogue, (width-info_panel_width+font_width/2, height/2-(info_panel_height/2-font_width*2.5)))
+   
     dialogue = dialogue_font.render("Mass: " + str(int(panel_body.mass+.5)), True, white)
-    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*4)))
+    window.blit(dialogue, (width-info_panel_width+font_width/2, height/2-(info_panel_height/2-font_width*4)))
 
     dialogue = dialogue_font.render("Coordinates: " + str(int(panel_body.x+.5)) + ", " + str(int(panel_body.y+.5)), True, white)
-    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*5.5)))
-    
+    window.blit(dialogue, (width-info_panel_width+font_width/2, height/2-(info_panel_height/2-font_width*5.5)))
+   
     dialogue = dialogue_font.render("Speed: " + str(int(panel_body.xspeed+.5)) + ", " + str(-int(panel_body.yspeed+.5)), True, white)
-    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*7)))
+    window.blit(dialogue, (width-info_panel_width+font_width/2, height/2-(info_panel_height/2-font_width*7)))
     for i in range(len(bodies)):
         panel_rank = 0
 
@@ -508,7 +512,7 @@ def info_panel(body):
             break
     dialogue = dialogue_font.render("Size Rank: " + str(panel_rank+1) + "/" + str(len(bodies)), True, white)
     dialogue_rect = dialogue.get_rect()
-    window.blit(dialogue, (width-panel_width+font_width/2, height/2-(panel_height/2-font_width*8.5)))
+    window.blit(dialogue, (width-info_panel_width+font_width/2, height/2-(info_panel_height/2-font_width*8.5)))
 
 add_panel_width = width-width/8
 add_panel_height = height/5
@@ -519,11 +523,11 @@ grid_offset_x = 0
 grid_offset_y = 0
 def draw_grid():
 
-    
+   
     global grid_offset_x
     global grid_offset_y
     dist_between = 100/scale
-    
+   
    
     lines = int(scale*10)
 
@@ -539,7 +543,7 @@ def draw_grid():
         dist_between /= 2
 
     #If the grid is offset more than half the distance between lines, move exactly one line in a seamless manner to keep the grid visible
-        
+       
     if grid_offset_x > dist_between/2:
         grid_offset_x = - dist_between/2
 
@@ -552,7 +556,7 @@ def draw_grid():
     if grid_offset_y < -dist_between/2:
         grid_offset_y = dist_between/2
 
-    
+   
     for i in range(lines):
         pygame.draw.line(window, gray, (0, i*(dist_between)+grid_offset_y), (width, i*(dist_between)+grid_offset_y))
     for i in range(lines*2):
@@ -567,7 +571,7 @@ def display_bodies_on_panel(panel_rect, display_bodies):
         if isinstance(thing.radius, complex):
             thing.radius = thing.radius.real
         thing.radius /= bigrad/(add_panel_height/3)
-        
+       
     for i in range(len(display_bodies)):
         display_body = display_bodies[i]
 
@@ -575,7 +579,7 @@ def display_bodies_on_panel(panel_rect, display_bodies):
         display_body.x = (add_panel_x+(i/len(display_bodies))*(add_panel_width))+add_panel_width/len(display_bodies)/2
         display_body.y = (height-add_panel_height/2)
         display_body.draw_at_coords()
-        
+       
         dialogue = dialogue_font.render(display_body.name, True, white)
         dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y-(display_body.radius)-font_width))
         window.blit(dialogue, dialogue_rect)
@@ -584,19 +588,19 @@ def display_bodies_on_panel(panel_rect, display_bodies):
         dialogue_rect = dialogue.get_rect(center=(display_body.x, display_body.y+(display_body.radius)+font_width))
         window.blit(dialogue, dialogue_rect)
 
-def bottom_panel(display_bodies, bottom_panel_type):
+def make_bottom_panel(display_bodies, bottom_panel_type):
     panel_rect = (add_panel_x, add_panel_y, add_panel_width, add_panel_height)
     pygame.draw.rect(window, dark_gray, panel_rect)
 
-    
+   
     if bottom_panel_type == 1:
         display_bodies_on_panel(panel_rect, display_bodies)
-        
-            
+       
+           
 
     elif bottom_panel_type == 2:
         display_bodies_on_panel(panel_rect, display_bodies)
-        
+       
 def tick_buttons():
     global saved_system
     global bodies
@@ -604,6 +608,9 @@ def tick_buttons():
     global speed
     global enable_trails
     global tickrate
+    global bottom_panel_type
+    global bottom_panel
+    global info_panel
     for button in buttons:
         button.draw()
         if button.get_clicked():
@@ -616,13 +623,7 @@ def tick_buttons():
                 speed /= 2
                 tickrate /= 2
             elif button == reset_button:
-                bodies = [body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
-                  body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
-                  body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
-                  body(width/2, height/2-500, 15, 0, 5, blue, "Earth"),
-                  body(width/2, height/2-900, 11, 0, 3, light_orange, "Mars"),
-                  body(width/2, height/2-2000, 7, 0, 25, lighter_orange, "Jupiter"),
-                  ]
+                bodies = copy.deepcopy(saved_system)
             elif button == toggle_trails_button:
                 enable_trails = not enable_trails
                 for thing in bodies:
@@ -637,13 +638,37 @@ def tick_buttons():
                 bodies = copy.deepcopy(saved_system)
                 print("Loaded System")
 
+            elif button == bottom_panel_close_button:
+                bottom_panel = False
+
+            elif button == bottom_panel_next_button:
+                bottom_panel_type += 1
+                if bottom_panel_type > 2:
+                    bottom_panel_type = 1
+
+            elif button == bottom_panel_open_button:
+                bottom_panel = True
+
+            elif button == info_panel_close_button:
+                info_panel = False
+
+            elif button == info_panel_open_button:
+                info_panel = True
+               
+
             else:
                 print("Unknown button (at " + str(time.time()-time_) + " seconds)")
-    
+   
 
 pygame.mouse.set_visible(True)
 window = pygame.display.set_mode([width, height])
 pygame.display.set_caption('Budget Universe Sandbox')
+
+info_panel_width = width/8
+info_panel_height = height/2.5
+info_panel_x = width-info_panel_width*1.1
+info_panel_y = height/2-info_panel_height/2
+info_panel_rect = (info_panel_x, info_panel_y, info_panel_width, info_panel_height)
 
 
 clock = pygame.time.Clock()
@@ -672,6 +697,16 @@ toggle_trails_button = ui.button(window, width-width/5, button_height*4.2, width
 save_button = ui.button(window, width-width/5, button_height*5.2, width/20, button_height, "Save", (64, 64, 64), (128, 128, 128), (255, 255, 255))
 load_button = ui.button(window, width-width/5, button_height*6.2, width/20, button_height, "Load", (64, 64, 64), (128, 128, 128), (255, 255, 255))
 
+
+
+bottom_panel_close_button = ui.button(window, add_panel_x+add_panel_width-button_height, add_panel_y, button_height, button_height, "X", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+bottom_panel_next_button = ui.button(window, add_panel_x+add_panel_width-button_height*4, add_panel_y, button_height*2.5, button_height, "Next", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+bottom_panel_open_button = ui.button(window, add_panel_x+add_panel_width/2-button_height, height-button_height, button_height, button_height, "^", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+
+info_panel_close_button = ui.button(window, width-button_height, info_panel_y, button_height, button_height, "X", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+info_panel_open_button = ui.button(window, width-button_height, info_panel_y+info_panel_height/2, button_height, button_height, "<", (64, 64, 64), (128, 128, 128), (255, 255, 255))
+
+
 buttons.append(pause_button)
 buttons.append(slow_button)
 buttons.append(speed_button)
@@ -679,15 +714,12 @@ buttons.append(reset_button)
 buttons.append(toggle_trails_button)
 buttons.append(save_button)
 buttons.append(load_button)
+buttons.append(bottom_panel_close_button)
+buttons.append(bottom_panel_next_button)
+buttons.append(info_panel_close_button)
+buttons.append(info_panel_open_button)
+buttons.append(bottom_panel_open_button)
 
-
-saved_system = [body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
-                body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
-                body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
-                body(width/2, height/2-500, 15, 0, 5, blue, "Earth"),
-                body(width/2, height/2-900, 11, 0, 3, light_orange, "Mars"),
-                body(width/2, height/2-2000, 7, 0, 25, lighter_orange, "Jupiter"),
-                ]
 
 def copy_depth_2(src):
     dst = []
@@ -707,7 +739,7 @@ ticks = 0
 
 
 
-    	
+      
 def disp_metrics():
     dialogue = dialogue_font.render("FPS: " + str(fps_), True, white)
     dialogue_rect = dialogue.get_rect()
@@ -753,7 +785,7 @@ while playing:
     dialogue_rect = dialogue.get_rect()
     window.blit(dialogue, dialogue_rect)
     draw_grid()
-    
+   
 
     list_sorting_start = time.time()
 
@@ -763,7 +795,7 @@ while playing:
     mouse_x_change, mouse_y_change = pygame.mouse.get_rel()
     bodies_to_delete = set()
 
-    
+   
     if not paused:
         fps = actual_fps
         if tickrate > fps:
@@ -778,8 +810,8 @@ while playing:
             bodies = [body for body in bodies if body.id not in bodies_to_delete]
     else:
         fps = 10
-        
-    
+       
+   
 
     for event in pygame.event.get():
        
@@ -817,9 +849,11 @@ while playing:
                     panel_body = currentbody
                     break"""
             if bottom_panel:
+               
+
                 if bottom_panel_type == 1:
                     if making_body:
-                        
+                       
                         making_body = False
                         making_body_2 = True
                     else:
@@ -844,72 +878,80 @@ while playing:
                             start_y = selected_body.y
                             making_body_2 = True
                             making_body = True
-                                                        
+                                                       
                 if bottom_panel_type == 2:
                     for clicked_body in display_bodies:
                         if abs(clicked_body.x-x) < clicked_body.radius+5 and abs(clicked_body.y-y) < clicked_body.radius+5:
-        
+       
                             for i in range(len(bodies)):
                                 if bodies[i].id == clicked_body.id:
                                     panel_body = bodies[i]
                                     follow = True
                                     break
+           
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 playing = False
                 break
-            
+           
             if event.key == pygame.K_UP:
-                panel = True
+                info_panel = True
                 panel_body = bodies[0]
-                
+               
             if event.key == pygame.K_DOWN:
-                panel = True
+                info_panel = True
                 panel_body = bodies[len(bodies)-1]
-                
+               
             if event.key == pygame.K_RIGHT:
                 if panel_rank+1 < len(bodies):
-                    panel = True
+                    info_panel = True
                     panel_body = bodies[panel_rank+1]
-                    
+                   
             if event.key == pygame.K_LEFT:
                 if panel_rank-1 >= 0:
-                    panel = True
+                    info_panel = True
                     panel_body = bodies[panel_rank-1]
-                    
+                   
             if event.key == pygame.K_SPACE:
                 follow = not follow
-                
+               
             if event.key == pygame.K_RETURN:
                 if bottom_panel_type <= 2:
                     bottom_panel_type += 1
                 else:
                     bottom_panel_type = 1
-                    
+                   
             if event.key == pygame.K_TAB:
                 x,y = pygame.mouse.get_pos()
                 for currentbody in bodies:
                     if abs(((currentbody.x/scale)+width/2)-x) < currentbody.radius/scale+5 and abs(((currentbody.y/scale)+height/2)-y) < currentbody.radius/scale+5:
                         currentbody.explode(EXPLOSION_FRAGMENT_COUNT)
                         break
-                    
+                   
     bodies = [body for body in bodies if body.id not in bodies_to_delete]
-    
+   
     for i in range(len(bodies)):
-        
+       
 
         if bodies[i].id == panel_body.id:
             panel_rank = i
              
             break
-    
+   
     if panel_rank > len(bodies) - 1:
         panel_rank = 0
         print("WARN: panel_rank out of range of list bodies, panel_rank set to 0. (at " + str(time.time()-time_) + " seconds)")
-    
-    
+   
+   
     if bottom_panel:
+        bottom_panel_close_button.enabled = True
+
+        bottom_panel_next_button.enabled = True
+
+       
+        bottom_panel_open_button.enabled = False
+           
         if bottom_panel_type == 1:
             if making_body:
                 x,y = pygame.mouse.get_pos()
@@ -918,7 +960,7 @@ while playing:
                 selected_body.y = (y-height/2)*scale
                 start_y = (y-height/2)*scale
                 selected_body.draw()
-                
+               
 
             if making_body_2:
                 if pygame.mouse.get_pressed()[0]:
@@ -935,7 +977,7 @@ while playing:
                     selected_body.draw()
                     bodies.append(selected_body)
                     making_body_2 = False
-                    
+                   
         if bottom_panel_type == 2:
             for i in range(len(bodies)):
                 panel_rank = 0
@@ -943,14 +985,21 @@ while playing:
                 if bodies[i].id == panel_body.id:
                     panel_rank = i
                     break
-            
+           
             if panel_rank > len(bodies) - 1:
                 panel_rank = 0
-            
+
+    else:
+        bottom_panel_close_button.enabled = False
+
+        bottom_panel_next_button.enabled = False
+
+        bottom_panel_open_button.enabled = True
+           
     center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
 
-        
-        
+       
+       
     if pygame.mouse.get_pressed()[2]:
         if follow:
             follow = False
@@ -958,21 +1007,17 @@ while playing:
         move_all(bodies, mouse_x_change*scale, mouse_y_change*scale)
 
 
-    
+   
     if pygame.mouse.get_pressed()[1]:
         move_all(bodies, -center_x, -center_y)
 
     if follow:
-        if bottom_panel_type > 2:
+        if not bottom_panel:
             move_all(bodies, -center_x, -center_y)
         else:
             move_all(bodies, -center_x, -center_y-add_panel_height/2)
    
-    panel_width = width/8
-    panel_height = height/2.5
-    panel_x = width-panel_width*1.1
-    panel_y = height/2-panel_height/2
-    panel_rect = (panel_x, panel_y, panel_width, panel_height)
+   
 
     trail_draw_start = time.time()
     if enable_trails:
@@ -1005,7 +1050,7 @@ while playing:
             display_bodies.append(display_small_planet)
             display_bodies.append(display_large_asteroid)
             display_bodies.append(display_small_asteroid)
-            bottom_panel(display_bodies, bottom_panel_type)
+            make_bottom_panel(display_bodies, bottom_panel_type)
 
         if bottom_panel_type == 2:
             display_bodies = []
@@ -1013,15 +1058,22 @@ while playing:
             for i in range(min(len(bodies), 8)):
                 display_bodies.append(body(0, 0, 0, 0, bodies[i].mass, bodies[i].color, bodies[i].name))
                 display_bodies[i].id = bodies[i].id
-            bottom_panel(display_bodies, bottom_panel_type)
-            
+            make_bottom_panel(display_bodies, bottom_panel_type)
+           
     if panel_body not in bodies:
         if len(bodies) != 0:
             panel_body = bodies[0]        
 
-    if panel:
-        info_panel(panel_body)
-        
+    if info_panel:
+        make_info_panel(panel_body)
+        info_panel_close_button.enabled = True
+        info_panel_open_button.enabled = False
+
+    else:
+        info_panel_close_button.enabled = False
+        info_panel_open_button.enabled = True
+       
+       
     center_x, center_y = calc_center_of_mass([bodies[panel_rank]])
 
    
@@ -1039,10 +1091,10 @@ while playing:
     start = time.time()
     tick_buttons()
     Buttons_time += time.time()-start
-    
+   
     #FIX
     #pygame.gfxdraw.aacircle(window, int(x_to_screen(panel_body.x)), int(y_to_screen(panel_body.y)), int(panel_body.radius/scale+1), (255, 255, 255))
-    
+   
     display_update_start = time.time()
     pygame.display.flip()
     display_update_time += time.time()-display_update_start
@@ -1082,4 +1134,3 @@ print_time_used("blitting metrics", display_update_time, Total_time, time.time()
 print()
 
 pygame.quit()
-
