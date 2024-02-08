@@ -192,22 +192,22 @@ class menu:
             button.get_clicked()
     
 class slider:
-    def __init__(self, x, y, width, height, minimum, maximum, step_amount, text, slider_pos, onclick=None):
+    def __init__(self, x, y, width, height, value_range, step_amount, text, slider_pos, onclick=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.minimum = minimum
-        self.maximum = maximum
+        self.minimum, self.maximum = value_range
         self.step_amount = step_amount
+        self.steps = int(abs((self.maximum-self.minimum)/self.step_amount))
         self.text = text
-        self.slider_pos = self.width*((slider_pos-minimum)/(maximum-minimum))
+        self.slider_pos = self.width*((slider_pos-self.minimum)/(self.maximum-self.minimum))
         self.color = (64, 64, 64)
         self.border_color = (96, 96, 96)
         self.text_color = (0, 255, 0)
         self.slider_color = (96, 96, 96)
         self.slide_color = (112, 112, 112)
-        self.slide_color_dark = (144, 144, 144)
+        self.slide_color_dark = (164, 164, 164)
         self.enabled = True
         self.rect = pygame.Rect(x, y, width, height)
         self.being_clicked = False
@@ -222,6 +222,8 @@ class slider:
         self.shine_color = (255, 255, 255)
         self.slider_outline_color = (32, 32, 32)
         self.onclick = onclick
+        self.events = None
+        self.being_dragged = False
 
         
     def draw(self, surface):
@@ -232,11 +234,11 @@ class slider:
             pygame.draw.line(surface, self.slide_color_dark, (self.x+self.slider_pos,self.y+self.height/2), (self.x+self.width,self.y+self.height/2), width = round(min(self.width, self.height)/10))
             surface.blit(self.disp_text, (self.x, self.y))
             surface.blit(self.disp_text2, (self.x, self.y+self.height/3*2))
-            steps = int(abs((self.maximum-self.minimum)/self.step_amount))
-            if steps < self.width/3:
-                for i in range(steps):
+            self.steps = int(abs((self.maximum-self.minimum)/self.step_amount))
+            if self.steps < self.width/3:
+                for i in range(self.steps):
 
-                    pygame.draw.line(surface, self.slide_color, (self.x+self.width/steps*i, self.y+self.height/2.5), (self.x+self.width/steps*i, self.y+self.height-self.height/2.5))
+                    pygame.draw.line(surface, self.slide_color, (self.x+self.width/self.steps*i, self.y+self.height/2.5), (self.x+self.width/self.steps*i, self.y+self.height-self.height/2.5))
             if self.fancy:
                 pygame.gfxdraw.filled_circle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_color)
                 pygame.gfxdraw.aacircle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_outline_color)
@@ -255,7 +257,7 @@ class slider:
     def mouse_on_slide(self):
         x, y = pygame.mouse.get_pos()
         if x >= self.x+self.width/10 and x <= self.x+self.width-self.width/10 and self.enabled:
-            return y >= self.y and y <= self.y+self.height
+            return y >= self.y+self.height/4 and y <= self.y+self.height-self.height/4
         return False
 
     def get_pos_of_nearest_step(self, steps):
@@ -263,7 +265,7 @@ class slider:
 
     def set_fancy(self, fancy):
         self.text2 = str(self.get_value())
-        self.fancy = True
+        self.fancy = fancy
         self.update_fancy()
             
     def update_fancy(self):
@@ -295,8 +297,52 @@ class slider:
             self.shine_color = (255, 225, 225)
             self.text_color = (255, 64, 64)
 
-    def get_clicked(self):
-        self.update()
+    def handle_events(self, events):
+
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and self.enabled:
+                print("got a click")
+                if self.mouse_on_slide():
+                    self.being_clicked = True
+                    print("Got clicked")
+                else:
+                    if self.mouse_over():
+                        self.being_dragged = True
+                        print("Got dragged")
+            if event.type == pygame.MOUSEBUTTONUP:
+                self.being_clicked = False
+                self.being_dragged = False
+
+        if self.enabled:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        if self.being_clicked and self.enabled:
+            self.slider_pos = mouse_x-self.x
+            self.steps = int(abs((self.maximum-self.minimum)/self.step_amount))
+            self.slider_pos = self.get_pos_of_nearest_step(self.steps)
+            self.slider_size = min(self.width, self.height)/6
+            if self.onclick:
+                self.onclick()
+        
+        else:
+            self.slider_size = min(self.width, self.height)/5
+
+        if self.being_dragged and self.enabled:
+            
+            self.x += mouse_x-self.last_mouse_x
+            self.y += mouse_y-self.last_mouse_y
+
+        if self.enabled:
+            self.last_mouse_x, self.last_mouse_y = mouse_x, mouse_y
+
+
+
+
+
+        
+
+        """
+        self.tick(self.events)
         if pygame.mouse.get_pressed()[0] and self.mouse_over() and self.enabled:
             self.being_clicked = True
             self.slider_pos = pygame.mouse.get_pos()[0]-self.x
@@ -316,8 +362,10 @@ class slider:
                 return self.mouse_over()
             #self.update()
         return False
+        """
     
-    def update(self):
+    def tick(self, events):
+        self.handle_events(events)
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         if self.text2 != str(self.get_value()):
             self.text2 = str(self.get_value())

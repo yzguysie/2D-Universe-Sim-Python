@@ -785,8 +785,7 @@ def tick_buttons():
         global fps
         global actual_fps
         slider.draw(window)
-        slider.update()
-        slider.get_clicked()
+        slider.tick(events)
         if slider == tickrate_slider:
             tickrate = speed/20*slider.get_value()
             slider.text2 = tickrate
@@ -874,9 +873,9 @@ sliders = []
 slider_width = width/15*2
 slider_height = height/25*2
 
-tickrate_slider = ui.slider(width/2, height/2, slider_width, slider_height, 10, 200, 10, "tickrate", 60)
-speed_slider = ui.slider(width/2+slider_width, height/2, slider_width, slider_height, 0.2, 20, 0.2, "speed", 4)
-fps_slider = ui.slider(width/2, height/2+slider_height, slider_width, slider_height, 20, 360, 5, "fps", 120)
+tickrate_slider = ui.slider(slider_width, 0, slider_width, slider_height, (10, 200), 10, "tickrate", 60)
+speed_slider = ui.slider(0, slider_height, slider_width, slider_height, (0.2, 20), 0.2, "speed", 4)
+fps_slider = ui.slider(0, 0, slider_width, slider_height, (20, 360), 5, "fps", 120)
 speed_slider.set_theme("blue")
 tickrate_slider.set_theme("red")
 fps_slider.slider_color = (64, 84, 196)
@@ -1006,8 +1005,8 @@ while playing:
         #fps = 10
         
     
-
-    for event in pygame.event.get():
+    events = pygame.event.get()
+    for event in events:
 
         
         action_this_frame = True
