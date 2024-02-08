@@ -784,7 +784,7 @@ def tick_buttons():
     for slider in sliders:
         global fps
         global actual_fps
-        slider.draw()
+        slider.draw(window)
         slider.update()
         slider.get_clicked()
         if slider == tickrate_slider:
@@ -874,9 +874,9 @@ sliders = []
 slider_width = width/15*2
 slider_height = height/25*2
 
-tickrate_slider = ui.slider(window, width/2, height/2, slider_width, slider_height, 10, 200, 10, "tickrate", 60, (64, 64, 64), (96, 96, 96), (0, 255, 0), (96, 96, 96), (112, 112, 112), (144, 144, 144))
-speed_slider = ui.slider(window, width/2+slider_width, height/2, slider_width, slider_height, 0.2, 20, 0.2, "speed", 4, (64, 64, 64), (96, 96, 96), (0, 255, 0), (96, 96, 96), (112, 112, 112), (144, 144, 144))
-fps_slider = ui.slider(window, width/2, height/2+slider_height, slider_width, slider_height, 20, 360, 5, "fps", 120, (64, 64, 64), (96, 96, 96), (0, 255, 0), (96, 96, 96), (112, 112, 112), (144, 144, 144))
+tickrate_slider = ui.slider(width/2, height/2, slider_width, slider_height, 10, 200, 10, "tickrate", 60)
+speed_slider = ui.slider(width/2+slider_width, height/2, slider_width, slider_height, 0.2, 20, 0.2, "speed", 4)
+fps_slider = ui.slider(width/2, height/2+slider_height, slider_width, slider_height, 20, 360, 5, "fps", 120)
 speed_slider.set_theme("blue")
 tickrate_slider.set_theme("red")
 fps_slider.slider_color = (64, 84, 196)

@@ -192,8 +192,7 @@ class menu:
             button.get_clicked()
     
 class slider:
-    def __init__(self, surface, x, y, width, height, minimum, maximum, step_amount, text, slider_pos, color, border_color, text_color, slider_color, slide_color, slide_color_dark, onclick=None):
-        self.surface = surface
+    def __init__(self, x, y, width, height, minimum, maximum, step_amount, text, slider_pos, onclick=None):
         self.x = x
         self.y = y
         self.width = width
@@ -203,12 +202,12 @@ class slider:
         self.step_amount = step_amount
         self.text = text
         self.slider_pos = self.width*((slider_pos-minimum)/(maximum-minimum))
-        self.color = color
-        self.border_color = border_color
-        self.text_color = text_color
-        self.slider_color = slider_color
-        self.slide_color = slide_color
-        self.slide_color_dark = slide_color_dark
+        self.color = (64, 64, 64)
+        self.border_color = (96, 96, 96)
+        self.text_color = (0, 255, 0)
+        self.slider_color = (96, 96, 96)
+        self.slide_color = (112, 112, 112)
+        self.slide_color_dark = (144, 144, 144)
         self.enabled = True
         self.rect = pygame.Rect(x, y, width, height)
         self.being_clicked = False
@@ -225,26 +224,26 @@ class slider:
         self.onclick = onclick
 
         
-    def draw(self):
+    def draw(self, surface):
         if self.enabled:
-            pygame.draw.rect(self.surface, self.color, self.rect)
-            pygame.draw.rect(self.surface, self.border_color, self.rect, int(min(self.width, self.height)/25))
-            pygame.draw.line(self.surface, self.slide_color, (self.x,self.y+self.height/2), (self.x+self.slider_pos,self.y+self.height/2), width = round(min(self.width, self.height)/10))
-            pygame.draw.line(self.surface, self.slide_color_dark, (self.x+self.slider_pos,self.y+self.height/2), (self.x+self.width,self.y+self.height/2), width = round(min(self.width, self.height)/10))
-            self.surface.blit(self.disp_text, (self.x, self.y))
-            self.surface.blit(self.disp_text2, (self.x, self.y+self.height/3*2))
+            pygame.draw.rect(surface, self.color, self.rect)
+            pygame.draw.rect(surface, self.border_color, self.rect, int(min(self.width, self.height)/25))
+            pygame.draw.line(surface, self.slide_color, (self.x,self.y+self.height/2), (self.x+self.slider_pos,self.y+self.height/2), width = round(min(self.width, self.height)/10))
+            pygame.draw.line(surface, self.slide_color_dark, (self.x+self.slider_pos,self.y+self.height/2), (self.x+self.width,self.y+self.height/2), width = round(min(self.width, self.height)/10))
+            surface.blit(self.disp_text, (self.x, self.y))
+            surface.blit(self.disp_text2, (self.x, self.y+self.height/3*2))
             steps = int(abs((self.maximum-self.minimum)/self.step_amount))
             if steps < self.width/3:
                 for i in range(steps):
 
-                    pygame.draw.line(self.surface, self.slide_color, (self.x+self.width/steps*i, self.y+self.height/2.5), (self.x+self.width/steps*i, self.y+self.height-self.height/2.5))
+                    pygame.draw.line(surface, self.slide_color, (self.x+self.width/steps*i, self.y+self.height/2.5), (self.x+self.width/steps*i, self.y+self.height-self.height/2.5))
             if self.fancy:
-                pygame.gfxdraw.filled_circle(self.surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_color)
-                pygame.gfxdraw.aacircle(self.surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_outline_color)
-                pygame.draw.circle(self.surface, self.shine_color, (round(self.x+self.slider_pos), round(self.y+self.height/2)), round(self.slider_size*0.8), round(self.slider_size/5), draw_top_right=True)
+                pygame.gfxdraw.filled_circle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_color)
+                pygame.gfxdraw.aacircle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_outline_color)
+                pygame.draw.circle(surface, self.shine_color, (round(self.x+self.slider_pos), round(self.y+self.height/2)), round(self.slider_size*0.8), round(self.slider_size/5), draw_top_right=True)
 
             else:
-                pygame.draw.circle(self.surface, self.slider_color, (self.x+self.slider_pos, self.y+self.height/2), self.slider_size)
+                pygame.draw.circle(surface, self.slider_color, (self.x+self.slider_pos, self.y+self.height/2), self.slider_size)
             
 
     def mouse_over(self):
