@@ -318,6 +318,10 @@ class slider:
 
         if self.being_clicked and self.enabled:
             self.slider_pos = mouse_x-self.x
+            if self.slider_pos < 0:
+                self.slider_pos = 0
+            if self.slider_pos > self.width:
+                self.slider_pos = self.width
             self.steps = int(abs((self.maximum-self.minimum)/self.step_amount))
             self.slider_pos = self.get_pos_of_nearest_step(self.steps)
             self.slider_size = min(self.width, self.height)/6
