@@ -268,7 +268,7 @@ def str_to_tuple(string):
     string = string.replace(' ', '')
     string = string.split(',')
     for i in range(len(string)):
-        string[i] = int(string[i])
+        string[i] = int(float(string[i]))
     return tuple(string)
     
 
@@ -356,12 +356,23 @@ class body:
         combined_mass = self.mass+consumed.mass
         if combined_mass == 0:
             combined_mass = -0.000000001
+
+        self_percentage = round(self.mass/combined_mass, 5)
+        other_percentage = 1-self_percentage
+        red = (self.color[0]*self_percentage)+(consumed.color[0]*other_percentage)
+        green = (self.color[1]*self_percentage)+(consumed.color[1]*other_percentage)
+        blue = (self.color[2]*self_percentage)+(consumed.color[2]*other_percentage)
+        self.color = (red, green, blue)
+
         self.radius = math.pow((self.radius**3+consumed.radius**3), 1/3)
         self.xspeed = ((self.xspeed*self.mass)+(consumed.xspeed*consumed.mass))/combined_mass
         self.yspeed = ((self.yspeed*self.mass)+(consumed.yspeed*consumed.mass))/combined_mass
         self.x = ((self.x*self.mass)+(consumed.x*consumed.mass))/combined_mass
         self.y = ((self.y*self.mass)+(consumed.y*consumed.mass))/combined_mass
         self.mass += consumed.mass
+
+
+
         for i in range(len(bodies)):
             if bodies[i].id == consumed.id:
                 bodies_to_delete.add(consumed.id)
@@ -584,7 +595,7 @@ def draw_grid():
     dist_between = 100/scale
     
    
-    lines = int(scale*10)
+    lines = scale*10
 
     #If too many lines, divide number of lines by 2
     while lines > 20:
@@ -596,6 +607,8 @@ def draw_grid():
     while lines < 10:
         lines *= 2
         dist_between /= 2
+
+    lines = int(lines+1)
 
     #If the grid is offset more than half the distance between lines, move exactly one line in a seamless manner to keep the grid visible
         
@@ -873,9 +886,9 @@ sliders = []
 slider_width = width/15*2
 slider_height = height/25*2
 
-tickrate_slider = ui.slider(slider_width, 0, slider_width, slider_height, (10, 200), 10, "tickrate", 60)
-speed_slider = ui.slider(0, slider_height, slider_width, slider_height, (0.2, 20), 0.2, "speed", 4)
-fps_slider = ui.slider(0, 0, slider_width, slider_height, (20, 360), 5, "fps", 120)
+tickrate_slider = ui.slider(slider_width, 0, slider_width, slider_height, (10, 240), 10, "tickrate", 120)
+speed_slider = ui.slider(0, slider_height, slider_width, slider_height, (0.1, 5), 0.1, "speed", 1)
+fps_slider = ui.slider(0, 0, slider_width, slider_height, (10, 360), 10, "fps", 60)
 speed_slider.set_theme("blue")
 tickrate_slider.set_theme("red")
 fps_slider.slider_color = (64, 84, 196)
@@ -1020,6 +1033,7 @@ while playing:
             scale *= 1-event.y/50
             if scale <= 0.1:
                 scale = 0.1
+                # Not doing this lags the game for some reason (circles too big or smth)
        
                
             x,y = pygame.mouse.get_pos()
@@ -1171,8 +1185,8 @@ while playing:
                     if making_body:
                         making_body = False
 
-                    selected_body.xspeed = (start_x - (x-width/2)*scale)/10*user_body_speed/scale
-                    selected_body.yspeed = (start_y - (y-height/2)*scale)/10*user_body_speed/scale
+                    selected_body.xspeed = (start_x - (x-width/2)*scale)/30*user_body_speed
+                    selected_body.yspeed = (start_y - (y-height/2)*scale)/30*user_body_speed
                     selected_body.draw()
                 else:
                     selected_body.draw()

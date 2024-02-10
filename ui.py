@@ -256,7 +256,7 @@ class slider:
 
     def mouse_on_slide(self):
         x, y = pygame.mouse.get_pos()
-        if x >= self.x+self.width/10 and x <= self.x+self.width-self.width/10 and self.enabled:
+        if x >= self.x and x <= self.x+self.width and self.enabled:
             return y >= self.y+self.height/4 and y <= self.y+self.height-self.height/4
         return False
 
@@ -301,14 +301,11 @@ class slider:
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and self.enabled:
-                print("got a click")
                 if self.mouse_on_slide():
                     self.being_clicked = True
-                    print("Got clicked")
                 else:
                     if self.mouse_over():
                         self.being_dragged = True
-                        print("Got dragged")
             if event.type == pygame.MOUSEBUTTONUP:
                 self.being_clicked = False
                 self.being_dragged = False
@@ -316,57 +313,29 @@ class slider:
         if self.enabled:
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        if self.being_clicked and self.enabled:
-            self.slider_pos = mouse_x-self.x
-            if self.slider_pos < 0:
-                self.slider_pos = 0
-            if self.slider_pos > self.width:
-                self.slider_pos = self.width
-            self.steps = int(abs((self.maximum-self.minimum)/self.step_amount))
-            self.slider_pos = self.get_pos_of_nearest_step(self.steps)
-            self.slider_size = min(self.width, self.height)/6
-            if self.onclick:
-                self.onclick()
-        
-        else:
-            self.slider_size = min(self.width, self.height)/5
-
-        if self.being_dragged and self.enabled:
+            if self.being_clicked:
+                self.slider_pos = mouse_x-self.x
+                if self.slider_pos < 0:
+                    self.slider_pos = 0
+                if self.slider_pos > self.width:
+                    self.slider_pos = self.width
+                self.steps = int(abs((self.maximum-self.minimum)/self.step_amount))
+                self.slider_pos = self.get_pos_of_nearest_step(self.steps)
+                self.slider_size = min(self.width, self.height)/5
+                if self.onclick:
+                    self.onclick()
             
-            self.x += mouse_x-self.last_mouse_x
-            self.y += mouse_y-self.last_mouse_y
+            else:
+                self.slider_size = min(self.width, self.height)/6
 
-        if self.enabled:
+            if self.being_dragged:
+                
+                self.x += mouse_x-self.last_mouse_x
+                self.y += mouse_y-self.last_mouse_y
+
             self.last_mouse_x, self.last_mouse_y = mouse_x, mouse_y
 
 
-
-
-
-        
-
-        """
-        self.tick(self.events)
-        if pygame.mouse.get_pressed()[0] and self.mouse_over() and self.enabled:
-            self.being_clicked = True
-            self.slider_pos = pygame.mouse.get_pos()[0]-self.x
-
-            steps = int(abs((self.maximum-self.minimum)/self.step_amount))
-            self.slider_pos = self.get_pos_of_nearest_step(steps)
-            self.slider_size = min(self.width, self.height)/6
-            if self.onclick:
-                self.onclick()
-            return True
-        
-        else:
-
-            self.slider_size = min(self.width, self.height)/5
-            if self.being_clicked == True:
-                self.being_clicked = False
-                return self.mouse_over()
-            #self.update()
-        return False
-        """
     
     def tick(self, events):
         self.handle_events(events)
@@ -395,7 +364,7 @@ class slider:
             
 
     def get_value(self):
-        val = self.minimum+(self.slider_pos/self.width)*(self.maximum-self.minimum)
+        val = round(self.minimum+(self.slider_pos/self.width)*(self.maximum-self.minimum), 12)
 
         if val == int(val):
             return int(val)
