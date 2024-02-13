@@ -8,15 +8,19 @@ import random
 import time
 import ui
 import copy
-import os
+from functools import partial
 
 from configparser import ConfigParser
 
 config = ConfigParser()
 
 fullscreen = False
+paused = False
 
 
+def set_paused(val):
+    global paused
+    paused = val
 
 """
 # parse existing file
@@ -249,11 +253,13 @@ body_id = 0
 
 #temp
 actual_fps = fps
-
+sliders = []
+buttons = []
 
 def refresh_positions():
+    global paused
     global buttons
-    global pause_button, speed_button, slow_button, reset_button, toggle_trails_button, save_button, load_button, new_sim_button, bottom_panel_close_button, bottom_panel_next_button, bottom_panel_open_button, info_panel_close_button, info_panel_open_button, toggle_grid_button, info_panel_delete_button, info_panel_zero_velocity_button, info_panel_explode_button, fancy_button, battery_saver_button
+    global pause_button, reset_button, toggle_trails_button, save_button, load_button, new_sim_button, bottom_panel_close_button, bottom_panel_next_button, bottom_panel_open_button, info_panel_close_button, info_panel_open_button, toggle_grid_button, info_panel_delete_button, info_panel_zero_velocity_button, info_panel_explode_button, fancy_button, battery_saver_button
     global sliders
     global tickrate_slider, speed_slider, fps_slider
     global width, height
@@ -261,9 +267,11 @@ def refresh_positions():
     global add_panel_width, add_panel_height
     global add_panel_x, add_panel_y
     global info_panel_x, info_panel_y, info_panel_width, info_panel_height, info_panel_rect
+
+    old_width, old_height = width, height
     width, height = pygame.display.get_surface().get_width(), pygame.display.get_surface().get_height()
+
     camera_x, camera_y = width/2, height/2
-    print(width)
     add_panel_width = width-width/8
     add_panel_height = height/5
     add_panel_x = width/16
@@ -275,75 +283,88 @@ def refresh_positions():
     info_panel_x = width-info_panel_width
     info_panel_y = height/2-info_panel_height/2
     info_panel_rect = (info_panel_x, info_panel_y, info_panel_width, info_panel_height)
-    buttons = []
+    
 
-    button_height = height/25
-    pause_button = ui.button(width-width/5, button_height*.2, width/20, button_height, "Pause")
-    reset_button = ui.button(width-width/5+width/20, button_height*.2, width/20, button_height, "Reset")
-    slow_button = ui.button(width-width/5, button_height*1.2, width/10, button_height, "Slow Down")
-    speed_button = ui.button(width-width/10, button_height*1.2, width/10, button_height, "Speed Up")
-    toggle_trails_button = ui.button(width-width/5, button_height*2.2, width/10, button_height, "Toggle Trails")
-    toggle_grid_button = ui.button(width-width/10, button_height*2.2, width/10, button_height, "Toggle Grid")
-    save_button = ui.button(width-width/5+width/10, button_height*.2, width/20, button_height, "Save")
-    load_button = ui.button(width-width/5+width/20+width/10, button_height*.2, width/20, button_height, "Load")
-    new_sim_button = ui.button(width-width/5, button_height*3.2, width/10, button_height, "New Sim")
-    fancy_button = ui.button(width-width/5, button_height*1.2, width/10, button_height, "just don't")
-    battery_saver_button = ui.button(width-width/10, button_height*1.2, width/10, button_height, "Battery Saver")
+    if len(buttons) > 0:
+        for button in buttons:
+            button.x *= width/old_width
+            button.width *= width/old_width
+            button.y *= height/old_height
+            button.height *= height/old_height
+    else:
+        buttons = []
+        button_height = height/25
+        pause_button = ui.button(width-width/5, button_height*.2, width/20, button_height, "Pause")
+        reset_button = ui.button(width-width/5+width/20, button_height*.2, width/20, button_height, "Reset")
+        toggle_trails_button = ui.button(width-width/5, button_height*2.2, width/10, button_height, "Toggle Trails")
+        toggle_grid_button = ui.button(width-width/10, button_height*2.2, width/10, button_height, "Toggle Grid")
+        save_button = ui.button(width-width/5+width/10, button_height*.2, width/20, button_height, "Save")
+        load_button = ui.button(width-width/5+width/20+width/10, button_height*.2, width/20, button_height, "Load")
+        new_sim_button = ui.button(width-width/5, button_height*3.2, width/10, button_height, "New Sim")
+        fancy_button = ui.button(width-width/5, button_height*1.2, width/10, button_height, "just don't")
+        battery_saver_button = ui.button(width-width/10, button_height*1.2, width/10, button_height, "Battery Saver")
 
 
-    bottom_panel_close_button = ui.button(add_panel_x+add_panel_width-button_height, add_panel_y, button_height, button_height, "X")
-    bottom_panel_next_button = ui.button(add_panel_x+add_panel_width-button_height*4, add_panel_y, button_height*2.5, button_height, "Next")
-    bottom_panel_open_button = ui.button(add_panel_x+add_panel_width/2-button_height, height-button_height, button_height, button_height, "^")
+        bottom_panel_close_button = ui.button(add_panel_x+add_panel_width-button_height, add_panel_y, button_height, button_height, "X")
+        bottom_panel_next_button = ui.button(add_panel_x+add_panel_width-button_height*4, add_panel_y, button_height*2.5, button_height, "Next")
+        bottom_panel_open_button = ui.button(add_panel_x+add_panel_width/2-button_height, height-button_height, button_height, button_height, "^")
 
-    info_panel_close_button = ui.button(width-button_height, info_panel_y, button_height, button_height, "X")
-    info_panel_open_button = ui.button(width-button_height, info_panel_y+info_panel_height/2, button_height, button_height, "<")
-    info_panel_delete_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2, button_height*2.5, button_height, "Delete")
-    info_panel_zero_velocity_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2+button_height, button_height*3.5, button_height, "Zero Velocity")
-    info_panel_explode_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2+button_height*2, button_height*2.5, button_height, "Explode")
+        info_panel_close_button = ui.button(width-button_height, info_panel_y, button_height, button_height, "X")
+        info_panel_open_button = ui.button(width-button_height, info_panel_y+info_panel_height/2, button_height, button_height, "<")
+        info_panel_delete_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2, button_height*2.5, button_height, "Delete")
+        info_panel_zero_velocity_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2+button_height, button_height*3.5, button_height, "Zero Velocity")
+        info_panel_explode_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2+button_height*2, button_height*2.5, button_height, "Explode")
 
-    buttons.append(pause_button)
-    #buttons.append(slow_button)
-    #buttons.append(speed_button)
-    buttons.append(reset_button)
-    buttons.append(toggle_trails_button)
-    buttons.append(save_button)
-    buttons.append(load_button)
-    buttons.append(new_sim_button)
-    buttons.append(bottom_panel_close_button)
-    buttons.append(bottom_panel_next_button)
-    buttons.append(info_panel_close_button)
-    buttons.append(info_panel_open_button)
-    buttons.append(bottom_panel_open_button)
-    buttons.append(toggle_grid_button)
-    buttons.append(info_panel_delete_button)
-    buttons.append(info_panel_zero_velocity_button)
-    buttons.append(info_panel_explode_button)
-    buttons.append(fancy_button)
-    buttons.append(battery_saver_button)
+        buttons.append(pause_button)
+        buttons.append(reset_button)
+        buttons.append(toggle_trails_button)
+        buttons.append(save_button)
+        buttons.append(load_button)
+        buttons.append(new_sim_button)
+        buttons.append(bottom_panel_close_button)
+        buttons.append(bottom_panel_next_button)
+        buttons.append(info_panel_close_button)
+        buttons.append(info_panel_open_button)
+        buttons.append(bottom_panel_open_button)
+        buttons.append(toggle_grid_button)
+        buttons.append(info_panel_delete_button)
+        buttons.append(info_panel_zero_velocity_button)
+        buttons.append(info_panel_explode_button)
+        buttons.append(fancy_button)
+        buttons.append(battery_saver_button)
 
-    sliders = []
+    
+    if len(sliders) > 0:
+        for slider in sliders:
+            value = slider.get_value()
+            slider.x *= width/old_width
+            slider.width *= width/old_width
+            slider.y *= height/old_height
+            slider.height *= height/old_height
+            slider.set_value(value)
+    else:
+        sliders = []
+        slider_width = width/15*2
+        slider_height = height/25*2
 
-    slider_width = width/15*2
-    slider_height = height/25*2
+        tickrate_slider = ui.slider(slider_width, 0, slider_width, slider_height, (10, 240), 10, "tickrate", 120)
+        speed_slider = ui.slider(0, slider_height, slider_width, slider_height, (0.1, 5), 0.1, "speed", 1)
+        fps_slider = ui.slider(0, 0, slider_width, slider_height, (10, 360), 10, "fps", 60)
+        speed_slider.set_theme("blue")
+        tickrate_slider.set_theme("red")
+        fps_slider.slider_color = (64, 84, 196)
+        fps_slider.slider_outline_color = (64, 84, 196)
+        fps_slider.color = (32, 42, 98)
+        fps_slider.border_color = (48, 64, 164)
+        fps_slider.slide_color = (84, 96, 225)
+        fps_slider.slide_color_dark = (64, 86, 164)
+        sliders.append(tickrate_slider)
+        sliders.append(speed_slider)
+        sliders.append(fps_slider)
 
-    tickrate_slider = ui.slider(slider_width, 0, slider_width, slider_height, (10, 240), 10, "tickrate", 120)
-    speed_slider = ui.slider(0, slider_height, slider_width, slider_height, (0.1, 5), 0.1, "speed", 1)
-    fps_slider = ui.slider(0, 0, slider_width, slider_height, (10, 360), 10, "fps", 60)
-    speed_slider.set_theme("blue")
-    tickrate_slider.set_theme("red")
-    fps_slider.slider_color = (64, 84, 196)
-    fps_slider.slider_outline_color = (64, 84, 196)
-    fps_slider.color = (32, 42, 98)
-    fps_slider.border_color = (48, 64, 164)
-    fps_slider.slide_color = (84, 96, 225)
-    fps_slider.slide_color_dark = (64, 86, 164)
-    sliders.append(tickrate_slider)
-    sliders.append(speed_slider)
-    sliders.append(fps_slider)
-
-    for slider in sliders:
-        slider.fancy = True
-        slider.update_fancy()
+        for slider in sliders:
+            slider.fancy = True
+            slider.update_fancy()
 
     
 
@@ -783,12 +804,6 @@ def tick_buttons():
         if button.get_clicked():
             if button == pause_button:
                 paused = not paused
-            elif button == speed_button:
-                speed *= 2
-                tickrate *= 2
-            elif button == slow_button:
-                speed /= 2
-                tickrate /= 2
             elif button == reset_button:
                 bodies = copy.deepcopy(saved_system)
             elif button == toggle_trails_button:
@@ -940,7 +955,7 @@ def mouse_over_anything():
             return True
     return False
 
-paused = False
+
 ticks = 0
 bodies_to_delete = set()
 
@@ -1044,10 +1059,7 @@ while playing:
             break
 
         elif event.type == pygame.VIDEORESIZE:
-            print(width)
             refresh_positions()
-            print(width)
-
        
         if event.type == pygame.MOUSEWHEEL:
             old_scale = scale
