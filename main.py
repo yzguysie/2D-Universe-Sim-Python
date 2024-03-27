@@ -294,26 +294,26 @@ def refresh_positions():
     else:
         buttons = []
         button_height = height/25
-        pause_button = ui.button(width-width/5, button_height*.2, width/20, button_height, "Pause")
-        reset_button = ui.button(width-width/5+width/20, button_height*.2, width/20, button_height, "Reset")
-        toggle_trails_button = ui.button(width-width/5, button_height*2.2, width/10, button_height, "Toggle Trails")
-        toggle_grid_button = ui.button(width-width/10, button_height*2.2, width/10, button_height, "Toggle Grid")
-        save_button = ui.button(width-width/5+width/10, button_height*.2, width/20, button_height, "Save")
-        load_button = ui.button(width-width/5+width/20+width/10, button_height*.2, width/20, button_height, "Load")
-        new_sim_button = ui.button(width-width/5, button_height*3.2, width/10, button_height, "New Sim")
-        fancy_button = ui.button(width-width/5, button_height*1.2, width/10, button_height, "just don't")
-        battery_saver_button = ui.button(width-width/10, button_height*1.2, width/10, button_height, "Battery Saver")
+        pause_button = ui.Button(width-width/5, button_height*.2, width/20, button_height, "Pause")
+        reset_button = ui.Button(width-width/5+width/20, button_height*.2, width/20, button_height, "Reset")
+        toggle_trails_button = ui.Button(width-width/5, button_height*2.2, width/10, button_height, "Toggle Trails")
+        toggle_grid_button = ui.Button(width-width/10, button_height*2.2, width/10, button_height, "Toggle Grid")
+        save_button = ui.Button(width-width/5+width/10, button_height*.2, width/20, button_height, "Save")
+        load_button = ui.Button(width-width/5+width/20+width/10, button_height*.2, width/20, button_height, "Load")
+        new_sim_button = ui.Button(width-width/5, button_height*3.2, width/10, button_height, "New Sim")
+        fancy_button = ui.Button(width-width/5, button_height*1.2, width/10, button_height, "just don't")
+        battery_saver_button = ui.Button(width-width/10, button_height*1.2, width/10, button_height, "Battery Saver")
 
 
-        bottom_panel_close_button = ui.button(add_panel_x+add_panel_width-button_height, add_panel_y, button_height, button_height, "X")
-        bottom_panel_next_button = ui.button(add_panel_x+add_panel_width-button_height*4, add_panel_y, button_height*2.5, button_height, "Next")
-        bottom_panel_open_button = ui.button(add_panel_x+add_panel_width/2-button_height, height-button_height, button_height, button_height, "^")
+        bottom_panel_close_button = ui.Button(add_panel_x+add_panel_width-button_height, add_panel_y, button_height, button_height, "X")
+        bottom_panel_next_button = ui.Button(add_panel_x+add_panel_width-button_height*4, add_panel_y, button_height*2.5, button_height, "Next")
+        bottom_panel_open_button = ui.Button(add_panel_x+add_panel_width/2-button_height, height-button_height, button_height, button_height, "^")
 
-        info_panel_close_button = ui.button(width-button_height, info_panel_y, button_height, button_height, "X")
-        info_panel_open_button = ui.button(width-button_height, info_panel_y+info_panel_height/2, button_height, button_height, "<")
-        info_panel_delete_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2, button_height*2.5, button_height, "Delete")
-        info_panel_zero_velocity_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2+button_height, button_height*3.5, button_height, "Zero Velocity")
-        info_panel_explode_button = ui.button(info_panel_x, info_panel_y+info_panel_height/2+button_height*2, button_height*2.5, button_height, "Explode")
+        info_panel_close_button = ui.Button(width-button_height, info_panel_y, button_height, button_height, "X")
+        info_panel_open_button = ui.Button(width-button_height, info_panel_y+info_panel_height/2, button_height, button_height, "<")
+        info_panel_delete_button = ui.Button(info_panel_x, info_panel_y+info_panel_height/2, button_height*2.5, button_height, "Delete")
+        info_panel_zero_velocity_button = ui.Button(info_panel_x, info_panel_y+info_panel_height/2+button_height, button_height*3.5, button_height, "Zero Velocity")
+        info_panel_explode_button = ui.Button(info_panel_x, info_panel_y+info_panel_height/2+button_height*2, button_height*2.5, button_height, "Explode")
 
         buttons.append(pause_button)
         buttons.append(reset_button)
@@ -347,9 +347,9 @@ def refresh_positions():
         slider_width = width/15*2
         slider_height = height/25*2
 
-        tickrate_slider = ui.slider(slider_width, 0, slider_width, slider_height, (10, 240), 10, "tickrate", 120)
-        speed_slider = ui.slider(0, slider_height, slider_width, slider_height, (0.1, 5), 0.1, "speed", 1)
-        fps_slider = ui.slider(0, 0, slider_width, slider_height, (10, 360), 10, "fps", 60)
+        tickrate_slider = ui.Slider(slider_width, 0, slider_width, slider_height, (10, 240), 10, "tickrate", 120)
+        speed_slider = ui.Slider(0, slider_height, slider_width, slider_height, (0.1, 5), 0.1, "speed", 1)
+        fps_slider = ui.Slider(0, 0, slider_width, slider_height, (10, 360), 10, "fps", 60)
         speed_slider.set_theme("blue")
         tickrate_slider.set_theme("red")
         fps_slider.slider_color = (64, 84, 196)

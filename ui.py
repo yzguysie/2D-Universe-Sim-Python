@@ -2,22 +2,23 @@ import pygame
 import math
 pygame.init()
 
-class button:
+class Button:
     def __init__(self, x, y, width, height, text, onclick=None, image_file=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.color = (64, 64, 64)
         self.border_color = (128, 128, 128)
-        self.rect = pygame.Rect(x, y, width, height)
         self.text = text
-        self.text_color = (255, 255, 255)
-        self.text_size = round(width/len(text)*2.5)
-        self.font = pygame.font.SysFont('Cascadia Code', self.text_size)
+        if self.text:
+            self.text_color = (255, 255, 255)
+            self.text_size = round(width/len(text)*2.5)
+            self.font = pygame.font.SysFont('Cascadia Code', self.text_size)
+            self.disp_text = self.font.render(self.text, True, self.text_color)
         self.being_clicked = False
         self.enabled = True
-        self.disp_text = self.font.render(self.text, True, self.text_color)
         self.moving = False
         self.fancy = True
         self.onclick = onclick
@@ -38,7 +39,8 @@ class button:
             self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
             pygame.draw.rect(surface, self.color, self.rect)
             pygame.draw.rect(surface, self.border_color, self.rect, round(min(self.width, self.height)/25))
-            surface.blit(self.disp_text, (self.rect[0], self.rect[1]))
+            if self.text:
+                surface.blit(self.disp_text, (self.rect[0], self.rect[1]))
             
     def update(self):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
@@ -66,15 +68,17 @@ class button:
             if not self.being_clicked:
                 self.being_clicked = True
                 self.rect = pygame.Rect(self.x+min(self.width, self.height)/20, self.y+min(self.width, self.height)/20, self.width-min(self.width, self.height)/10, self.height-min(self.width, self.height)/10)
-                self.text_size = int(self.width/len(self.text)*1.2)
-                self.disp_text = self.font.render(self.text, False, self.text_color)
+                if self.text:
+                    self.text_size = int(self.width/len(self.text)*1.2)
+                    self.disp_text = self.font.render(self.text, False, self.text_color)
                 return False
         else:
             if self.being_clicked == True:
                 self.being_clicked = False
                 self.update()
-                self.text_size = int(self.width/len(self.text)*1.5)
-                self.disp_text = self.font.render(self.text, False, self.text_color)
+                if self.text:
+                    self.text_size = int(self.width/len(self.text)*1.5)
+                    self.disp_text = self.font.render(self.text, False, self.text_color)
                 is_clicked = self.mouse_over()
                 if self.onclick:
                     self.onclick()
@@ -84,10 +88,7 @@ class button:
 
 
     def mouse_over(self):
-        x, y = pygame.mouse.get_pos()
-        if x >= self.x and x <= self.x+self.width and self.enabled:
-            return y >= self.y and y <= self.y+self.height
-        return False
+        return self.rect.collidepoint(pygame.mouse.get_pos())
 
     def set_theme(self, theme):
 
@@ -101,13 +102,13 @@ class button:
             self.border_color = (196, 48, 48)
             self.text_color = (255, 64, 64)
 
-class text_box:
-    def __init__(self, surface, x, y, width, height):
-        self.surface = surface
+class TextBox:
+    def __init__(self, x, y, width, height, onclick = False):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.text = ''
         self.active_color = (64, 64, 64)
         self.inactive_color = (32, 32, 32)
@@ -119,19 +120,22 @@ class text_box:
         self.text_size = 25
         self.font = pygame.font.SysFont('Cascadia Code', self.text_size)
         self.disp_text = self.font.render(self.text, True, self.text_color)
+        self.onclick = onclick
 
-    def draw(self):
+    def draw(self, surface):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        pygame.draw.rect(self.surface, self.color, self.rect)
-        pygame.draw.rect(self.surface, self.border_color, self.rect, round(min(self.width, self.height)/25))
-        self.surface.blit(self.disp_text, (self.rect[0], self.rect[1]))
+        pygame.draw.rect(surface, self.color, self.rect)
+        pygame.draw.rect(surface, self.border_color, self.rect, round(min(self.width, self.height)/25))
+        surface.blit(self.disp_text, (self.rect[0], self.rect[1]))
         
-        
+    def mouse_over(self):
+        return self.rect.collidepoint(pygame.mouse.get_pos())
+    
     def tick(self):
-        self.draw()
+        done = False
         for event in self.events:
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if self.rect.collidepoint(pygame.mouse.get_pos()):
+                if self.mouse_over():
                     self.active = not self.active
                 else:
                     self.active = False
@@ -139,64 +143,76 @@ class text_box:
             if self.active:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
+                        self.ret_text = self.text
                         self.text = ''
                         self.disp_text = self.font.render(self.text, True, self.text_color)
+                        done = True
                     elif event.key == pygame.K_BACKSPACE:
                         self.text = self.text[:-1]
                         self.disp_text = self.font.render(self.text, True, self.text_color)
                     else:
                         self.text += event.unicode
                         self.disp_text = self.font.render(self.text, True, self.text_color)
-        
+        if done and self.onclick:
+            self.onclick(self.ret_text)
+        return done
 
-class menu:
+class Menu:
     def __init__(self, x, y, width, height, columns, rows):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.rows = rows
         self.columns = columns
         self.buttons = []
-        self.color = (128, 128, 128)
+        self.color = (64, 64, 64)
+        self.border_color = (128, 128, 128)
         self.enabled = True
         
     def add_button(self, button):
         if len(self.buttons) > self.columns*self.rows:
             return
-        button.width = self.width/self.columns *.9
-        button.height = self.height/self.rows *.9
+        button.width = self.width/self.columns *.8
+        button.height = self.height/self.rows *.8
         button_column = len(self.buttons)%self.columns
         button_row = len(self.buttons)//self.columns
         button.x = self.x + self.width*(button_column/self.columns) + button.width/10
         button.y = self.y + self.height*(button_row/self.rows) + button.height/10
         
         button.rect = pygame.Rect(button.x, button.y, button.width, button.height)
-        
-        button.text_size = round(button.width/len(button.text)*2.5)
-        button.font = pygame.font.SysFont('Cascadia Code', button.text_size)
-        button.disp_text = button.font.render(button.text, True, button.text_color)
+        if button.text:
+            button.text_size = round(button.width/len(button.text)*2.5)
+            button.font = pygame.font.SysFont('Cascadia Code', button.text_size)
+            button.disp_text = button.font.render(button.text, True, button.text_color)
         button.update_image()
         self.buttons.append(button)
 
     def draw(self, surface):
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        pygame.draw.rect(surface, self.color, self.rect)
-        for button in self.buttons:
-            button.draw(surface)
+        if self.enabled:
+            self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+            pygame.draw.rect(surface, self.color, self.rect)
+            pygame.draw.rect(surface, self.border_color, self.rect, round(min(self.width, self.height)/25))
+
+            for button in self.buttons:
+                button.draw(surface)
+
+    def mouse_over(self):
+        self.rect.collidepoint(pygame.mouse.get_pos())
 
     def tick(self):
-        # if self.enabled:
-        #     self.draw()
-        for button in self.buttons:
-            button.get_clicked()
+        if self.enabled:
+            for button in self.buttons:
+                button.get_clicked()
     
-class slider:
+class Slider:
     def __init__(self, x, y, width, height, value_range, step_amount, text, slider_pos, onclick=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.rect = pygame.Rect(x, y, width, height)
         self.minimum, self.maximum = value_range
         self.step_amount = step_amount
         self.steps = int(abs((self.maximum-self.minimum)/self.step_amount))
@@ -209,7 +225,6 @@ class slider:
         self.slide_color = (112, 112, 112)
         self.slide_color_dark = (164, 164, 164)
         self.enabled = True
-        self.rect = pygame.Rect(x, y, width, height)
         self.being_clicked = False
         self.text_size = int(self.height/3)
         self.font = pygame.font.SysFont('Times New Roman', self.text_size)
@@ -249,10 +264,7 @@ class slider:
             
 
     def mouse_over(self):
-        x, y = pygame.mouse.get_pos()
-        if x >= self.x and x <= self.x+self.width and self.enabled:
-            return y >= self.y and y <= self.y+self.height
-        return False
+        return self.rect.collidepoint(pygame.mouse.get_pos())
 
     def mouse_on_slide(self):
         x, y = pygame.mouse.get_pos()
@@ -373,7 +385,3 @@ class slider:
 
     def set_value(self, value):
         self.slider_pos = self.width*(value-self.minimum)/(self.maximum-self.minimum)
-        
-
-    
-        
