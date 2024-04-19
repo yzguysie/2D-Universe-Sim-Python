@@ -430,6 +430,11 @@ class Body:
         self.x += self.xspeed/tickrate
         self.y += self.yspeed/tickrate
     def draw_trail(self):
+
+        trail_fade_mode = True
+        trail_fade_begin = 3 # Must be more than 1, larger value = trails fade closer to the end
+
+
         while len(self.last_pos_x) > trail_length:
             self.last_pos_x.pop(trail_length)
         while len(self.last_pos_y) > trail_length:
@@ -445,17 +450,18 @@ class Body:
                     pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y), ((self.x)/scale+camera_x,(self.y)/scale+camera_y), int((self.radius/(3*scale)+.5)))
 
             else:
-               
+                color_percent = min((trail_length-i)/trail_length*trail_fade_begin, 1)
+                color = (self.color[0]*color_percent, self.color[1]*color_percent, self.color[2]*color_percent)
                 x_dist = self.last_pos_x[i] - self.x
                 y_dist = self.last_pos_y[i] - self.y
                 points.append(((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y))
-                if len(self.last_pos_x) < 3:
-                    pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y), ((self.last_pos_x[i-1])/scale+camera_x,(self.last_pos_y[i-1])/scale+camera_y), int((self.radius/(3*scale))+1))
-        if len(self.last_pos_x) > 2:
-            if aalines:
-                pygame.draw.aalines(window, self.color, False, points, int((self.radius/(3*scale))+1))
-            else:
-                pygame.draw.lines(window, self.color, False, points, int((self.radius/(3*scale))+1))
+                if len(self.last_pos_x) < 3 or trail_fade_mode:
+                    pygame.draw.line(window, color, ((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y), ((self.last_pos_x[i-1])/scale+camera_x,(self.last_pos_y[i-1])/scale+camera_y), int((self.radius/(3*scale))+1))
+        # if len(self.last_pos_x) > 2:
+        #     if aalines:
+        #         pygame.draw.aalines(window, self.color, False, points, int((self.radius/(3*scale))+1))
+        #     else:
+        #         pygame.draw.lines(window, self.color, False, points, int((self.radius/(3*scale))+1))
     def consume(self, consumed):
         if self.mass >= mass_before_exploding and consumed.mass >= mass_before_exploding:
             self.explode(int(EXPLOSION_FRAGMENT_COUNT*math.sqrt(self.mass/1500)))
