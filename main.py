@@ -432,7 +432,7 @@ class Body:
     def draw_trail(self):
 
         trail_fade_mode = True
-        trail_fade_begin = 3 # Must be more than 1, larger value = trails fade closer to the end
+        trail_fade_begin = 4 # should be >= 1, larger value = trails begin to fade closer to the end
 
 
         while len(self.last_pos_x) > trail_length:
@@ -450,8 +450,8 @@ class Body:
                     pygame.draw.line(window, self.color, ((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y), ((self.x)/scale+camera_x,(self.y)/scale+camera_y), int((self.radius/(3*scale)+.5)))
 
             else:
-                color_percent = min((trail_length-i)/trail_length*trail_fade_begin, 1)
-                color = (self.color[0]*color_percent, self.color[1]*color_percent, self.color[2]*color_percent)
+                brightness = min((trail_length-i)/trail_length*trail_fade_begin, 1)
+                color = (self.color[0]*brightness, self.color[1]*brightness, self.color[2]*brightness)
                 x_dist = self.last_pos_x[i] - self.x
                 y_dist = self.last_pos_y[i] - self.y
                 points.append(((((self.last_pos_x[i]))/scale)+camera_x,((self.last_pos_y[i])+0*(1))/scale+camera_y))
