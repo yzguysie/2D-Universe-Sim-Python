@@ -1,5 +1,6 @@
 import pygame
 import math
+from common.colors import Colors
 pygame.init()
 
 class Button:
@@ -9,17 +10,29 @@ class Button:
         self.width = width
         self.height = height
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.border_width = int(min(self.width, self.height)/15)
         self.color = (64, 64, 64)
-        self.border_color = (128, 128, 128)
+        self.border_mult = 2
+        self.highlight_mult = 1.25
+        self.clicked_mult = 1.5
         self.text = text
+        self.set_theme(self.color)
         if self.text:
-            self.text_color = (255, 255, 255)
-            self.text_size = round(width/len(text)*2.5)
-            self.font = pygame.font.SysFont('Cascadia Code', self.text_size)
-            self.disp_text = self.font.render(self.text, True, self.text_color)
+            # self.text_color = Colors.set_luminosity(self.color, 255)
+            # self.text_size = round(width/len(text)*2.5)
+            # self.font_name = 'Cascadia Code'
+            # self.font = pygame.font.SysFont(self.font_name, self.text_size)
+            # self.disp_text = self.font.render(self.text, True, self.text_color)
+            self.font_name = 'Cascadia Code'
+            self.set_text(self.text)
+        # self.border_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)*self.border_mult)
+        # self.highlight_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)*self.highlight_mult)
+        # self.clicked_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)*self.clicked_mult)
+        
         self.being_clicked = False
         self.enabled = True
         self.moving = False
+        self.movable = False
         self.fancy = True
         self.onclick = onclick
         self.image_file = image_file
@@ -30,6 +43,27 @@ class Button:
 
     def update_image(self):
         self.image = pygame.transform.smoothscale(self.image_file, (round(self.width), round(self.height)))
+
+    def set_text(self, text):
+        self.text = text
+        self.rect = pygame.Rect(self.x+min(self.width, self.height)/20, self.y+min(self.width, self.height)/20, self.width-min(self.width, self.height)/10, self.height-min(self.width, self.height)/10)
+        if self.text:
+            self.text_size = int(self.width/len(self.text)*2.5)
+            self.font = pygame.font.SysFont(self.font_name, self.text_size)
+            self.disp_text = self.font.render(self.text, True, self.text_color)
+
+    def set_pos(self, x, y):
+        self.x = x
+        self.y = y
+
+    def set_dimensions(self, rect):
+        x, y, width, height = rect
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.border_width = int(min(self.width, self.height)/25+1)
         
     def draw(self, surface):
         if self.enabled:
@@ -37,15 +71,22 @@ class Button:
                 surface.blit(self.image, (self.x, self.y))
                 return
             self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-            pygame.draw.rect(surface, self.color, self.rect)
-            pygame.draw.rect(surface, self.border_color, self.rect, round(min(self.width, self.height)/25))
+            if self.being_clicked:
+                pygame.draw.rect(surface, self.clicked_color, self.rect)
+            elif self.mouse_over():
+                pygame.draw.rect(surface, self.highlight_color, self.rect)
+            else:
+                pygame.draw.rect(surface, self.color, self.rect)
+            pygame.draw.rect(surface, self.border_color, self.rect, self.border_width)
             if self.text:
-                surface.blit(self.disp_text, (self.rect[0], self.rect[1]))
+                #surface.blit(self.disp_text, (self.rect[0], self.rect[1]))
+                text_rect = self.disp_text.get_rect(center=(self.x+self.width/2, self.y+self.height/2))
+                surface.blit(self.disp_text, text_rect)
             
     def update(self):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        if pygame.mouse.get_pressed()[2] and self.mouse_over():
+        if self.movable and pygame.mouse.get_pressed()[2] and self.mouse_over():
             if self.moving:
                 self.x += mouse_x-self.last_mouse_x
                 self.y += mouse_y-self.last_mouse_y
@@ -62,23 +103,23 @@ class Button:
                 self.moving = False
         self.last_mouse_x, self.last_mouse_y = pygame.mouse.get_pos()
 
-    def get_clicked(self):
+    def tick(self):
         self.update()
         if pygame.mouse.get_pressed()[0] and self.mouse_over() and self.enabled:
             if not self.being_clicked:
                 self.being_clicked = True
                 self.rect = pygame.Rect(self.x+min(self.width, self.height)/20, self.y+min(self.width, self.height)/20, self.width-min(self.width, self.height)/10, self.height-min(self.width, self.height)/10)
                 if self.text:
-                    self.text_size = int(self.width/len(self.text)*1.2)
-                    self.disp_text = self.font.render(self.text, False, self.text_color)
+                    self.text_size = int(self.width/len(self.text)*2.5)
+                    self.disp_text = self.font.render(self.text, True, self.text_color)
                 return False
         else:
             if self.being_clicked == True:
                 self.being_clicked = False
                 self.update()
                 if self.text:
-                    self.text_size = int(self.width/len(self.text)*1.5)
-                    self.disp_text = self.font.render(self.text, False, self.text_color)
+                    self.text_size = int(self.width/len(self.text)*2.5)
+                    self.disp_text = self.font.render(self.text, True, self.text_color)
                 is_clicked = self.mouse_over()
                 if self.onclick:
                     self.onclick()
@@ -90,17 +131,32 @@ class Button:
     def mouse_over(self):
         return self.rect.collidepoint(pygame.mouse.get_pos())
 
-    def set_theme(self, theme):
+    def set_theme(self, color: tuple[int, int, int]):
 
-        if theme == "blue":
-            self.color = (32, 42, 98)
-            self.border_color = (48, 64, 164)
-            self.text_color = (96, 96, 255)
+        self.color = color
+        if max(self.color) <= 144: # If background color is dark, make other things such as text color brighter (for contrast)
+            self.border_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)*self.border_mult)
+            self.highlight_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)*self.highlight_mult)
+            self.clicked_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)*self.clicked_mult)
+            self.text_color = Colors.set_luminosity(self.color, 255)
+        else: # Otherwise make other things dark
+            self.border_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)/self.border_mult)
+            self.highlight_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)/self.highlight_mult)
+            self.clicked_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)/self.clicked_mult)
+            self.text_color = Colors.set_luminosity(self.color, Colors.get_luminosity(self.color)/self.clicked_mult/3)
+        self.text_size = round(self.width/len(self.text)*2.5)
+        self.font = pygame.font.SysFont('Cascadia Code', self.text_size)
+        self.disp_text = self.font.render(self.text, True, self.text_color)
 
-        if theme == "red":
-            self.color = (128, 32, 32)
-            self.border_color = (196, 48, 48)
-            self.text_color = (255, 64, 64)
+        # if theme == "blue":
+        #     self.color = (32, 42, 98)
+        #     self.border_color = (48, 64, 164)
+        #     self.text_color = (96, 96, 255)
+
+        # if theme == "red":
+        #     self.color = (128, 32, 32)
+        #     self.border_color = (196, 48, 48)
+        #     self.text_color = (255, 64, 64)
 
 class TextBox:
     def __init__(self, x, y, width, height, onclick = False):
@@ -171,7 +227,7 @@ class Menu:
         self.border_color = (128, 128, 128)
         self.enabled = True
         
-    def add_button(self, button):
+    def add_button(self, button: Button):
         if len(self.buttons) > self.columns*self.rows:
             return
         button.width = self.width/self.columns *.8
@@ -222,6 +278,7 @@ class Slider:
         self.border_color = (96, 96, 96)
         self.text_color = (0, 255, 0)
         self.slider_color = (96, 96, 96)
+        self.slider_highlighted_color = Colors.set_luminosity(self.slider_color, Colors.get_luminosity(self.slider_color)*1.25)
         self.slide_color = (112, 112, 112)
         self.slide_color_dark = (164, 164, 164)
         self.enabled = True
@@ -254,13 +311,10 @@ class Slider:
                 for i in range(self.steps):
 
                     pygame.draw.line(surface, self.slide_color, (self.x+self.width/self.steps*i, self.y+self.height/2.5), (self.x+self.width/self.steps*i, self.y+self.height-self.height/2.5))
-            if self.fancy:
-                pygame.gfxdraw.filled_circle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_color)
-                pygame.gfxdraw.aacircle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_outline_color)
-                pygame.draw.circle(surface, self.shine_color, (round(self.x+self.slider_pos), round(self.y+self.height/2)), round(self.slider_size*0.8), round(self.slider_size/5), draw_top_right=True)
 
-            else:
-                pygame.draw.circle(surface, self.slider_color, (self.x+self.slider_pos, self.y+self.height/2), self.slider_size)
+            pygame.gfxdraw.filled_circle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_highlighted_color if self.mouse_on_slide() else self.slider_color)
+            pygame.gfxdraw.aacircle(surface, round(self.x+self.slider_pos), round(self.y+self.height/2), round(self.slider_size), self.slider_outline_color)
+            pygame.draw.circle(surface, self.shine_color, (round(self.x+self.slider_pos), round(self.y+self.height/2)), round(self.slider_size*0.8), round(self.slider_size/5), draw_top_right=True)
             
 
     def mouse_over(self):
@@ -308,6 +362,8 @@ class Slider:
             self.slide_color_dark = (196, 64, 64)
             self.shine_color = (255, 225, 225)
             self.text_color = (255, 64, 64)
+
+        self.slider_highlighted_color = Colors.set_luminosity(self.slider_color, Colors.get_luminosity(self.slider_color)*1.25)
 
     def handle_events(self, events):
 

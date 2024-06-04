@@ -254,7 +254,7 @@ body_id = 0
 #temp
 actual_fps = fps
 sliders = []
-buttons = []
+buttons: list[ui.Button] = []
 
 def refresh_positions():
     global paused
@@ -287,10 +287,14 @@ def refresh_positions():
 
     if len(buttons) > 0:
         for button in buttons:
-            button.x *= width/old_width
-            button.width *= width/old_width
-            button.y *= height/old_height
-            button.height *= height/old_height
+            x_mult = width/old_width
+            y_mult = height/old_height
+            new_rect = (button.x*x_mult, button.y*y_mult, button.width*x_mult, button.height*y_mult)
+            button.set_dimensions(new_rect)
+            # button.x *= width/old_width
+            # button.width *= width/old_width
+            # button.y *= height/old_height
+            # button.height *= height/old_height
     else:
         buttons = []
         button_height = height/25
@@ -358,6 +362,7 @@ def refresh_positions():
         fps_slider.border_color = (48, 64, 164)
         fps_slider.slide_color = (84, 96, 225)
         fps_slider.slide_color_dark = (64, 86, 164)
+        fps_slider.set_theme("blue")
         sliders.append(tickrate_slider)
         sliders.append(speed_slider)
         sliders.append(fps_slider)
@@ -432,7 +437,7 @@ class Body:
     def draw_trail(self):
 
         trail_fade_mode = True
-        trail_fade_begin = 4 # should be >= 1, larger value = trails begin to fade closer to the end
+        trail_fade_begin = 1 # should be >= 1, larger value = trails begin to fade closer to the end
 
 
         while len(self.last_pos_x) > trail_length:
@@ -535,6 +540,7 @@ def print_time_used(time_name, time, used_time, total_time):
     print("Time used for " + time_name + ": " + str(int(time*10000)/10000))
     print("Percent of used time" + ": " + str(int(time*10000/used_time)/100) + "%")
     print("Percent of total time" + ": " + str(int(time*10000/total_time)/100) + "%")
+
 saved_system = [Body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
                 Body(width/2, height/2-100, 30, 0, 1, light_gray, "Mercury"),
                 Body(width/2, height/2-250, 20, 0, 4, orange, "Venus"),
@@ -545,6 +551,7 @@ saved_system = [Body(width/2, height/2, 0, 0, 1000, (220, 220, 20), "Sun"),
                 Body(width/2, height/2-8000, 4, 0, 8, light_blue, "Uranus"),
                 Body(width/2, height/2-10000, 3.6, 0, 9, dark_blue, "Neptune"),               
                 ]
+
 bodies = copy.deepcopy(saved_system)
 display_bodies = []
 
@@ -637,7 +644,7 @@ def bodies_draw(items):
         body.draw()
 
 
-def move_all(items, x, y):
+def move_all(items, x, y, move_grid=True):
     global camera_x
     global camera_y
     global grid_offset_x
@@ -651,9 +658,9 @@ def move_all(items, x, y):
            
         for i in range(len(body.last_pos_y)):
             body.last_pos_y[i] += y
-
-    grid_offset_x += x/scale
-    grid_offset_y += y/scale
+    if move_grid:
+        grid_offset_x += x/scale
+        grid_offset_y += y/scale
     
     #camera_x -= x
     #camera_y -= y
@@ -698,13 +705,10 @@ add_panel_y = height-add_panel_height
 grid_offset_x = 0
 grid_offset_y = 0
 def draw_grid():
-
     
     global grid_offset_x
     global grid_offset_y
-    dist_between = 100/scale
-    
-   
+    dist_between = (max(width, height)/10)/scale
     lines = scale*10
 
     #If too many lines, divide number of lines by 2
@@ -721,23 +725,25 @@ def draw_grid():
     lines = int(lines+1)
 
     #If the grid is offset more than half the distance between lines, move exactly one line in a seamless manner to keep the grid visible
-        
-    if grid_offset_x > dist_between/2:
-        grid_offset_x = - dist_between/2
 
-    if grid_offset_x < -dist_between/2:
-        grid_offset_x = dist_between/2
 
-    if grid_offset_y > dist_between/2:
-        grid_offset_y = - dist_between/2
 
-    if grid_offset_y < -dist_between/2:
-        grid_offset_y = dist_between/2
+    while grid_offset_x > dist_between/2:
+        grid_offset_x -= dist_between
+
+    while grid_offset_x < -dist_between/2:
+        grid_offset_x += dist_between
+
+    while grid_offset_y > dist_between/2:
+        grid_offset_y -= dist_between
+
+    while grid_offset_y < -dist_between/2:
+        grid_offset_y += dist_between
 
     
     for i in range(lines):
         pygame.draw.line(window, gray, (0, i*(dist_between)+grid_offset_y), (width, i*(dist_between)+grid_offset_y))
-    for i in range(lines*2):
+    for i in range(lines):
         pygame.draw.line(window, gray, (i*(dist_between)+grid_offset_x, 0), (i*(dist_between)+grid_offset_x, height))
 
 def display_bodies_on_panel(panel_rect, display_bodies):
@@ -802,7 +808,7 @@ def tick_buttons():
     global draw_shine
     for button in buttons:
         button.draw(window)
-        if button.get_clicked():
+        if button.tick():
             if button == pause_button:
                 paused = not paused
             elif button == reset_button:
@@ -1016,8 +1022,7 @@ while playing:
     window.fill(background_color)
  
 
-    if enable_grid:
-        draw_grid()
+
     
 
     list_sorting_start = time.time()
@@ -1069,10 +1074,10 @@ while playing:
                
             x,y = pygame.mouse.get_pos()
             if not follow:
-                move_all(bodies, (x-width/2)*(scale-old_scale), (y-height/2)*(scale-old_scale))
+                move_all(bodies, (x-width/2)*(scale-old_scale), (y-height/2)*(scale-old_scale), move_grid = False)
 
-                grid_offset_x += (x)*(scale-old_scale)/scale
-                grid_offset_y += (y)*(scale-old_scale)/scale
+                #grid_offset_x += (x-width/2)*(scale-old_scale)/scale
+                #grid_offset_y += (y-height/2)*(scale-old_scale)/scale
             else:
                 grid_offset_x += (width/2)*(scale-old_scale)/scale
                 grid_offset_y += (height/2)*(scale-old_scale)/scale
@@ -1276,6 +1281,8 @@ while playing:
     Trails_time += time.time() - trail_draw_start
 
 
+    if enable_grid:
+        draw_grid()
 
 
 
