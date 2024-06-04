@@ -1076,8 +1076,8 @@ while playing:
             if not follow:
                 move_all(bodies, (x-width/2)*(scale-old_scale), (y-height/2)*(scale-old_scale), move_grid = False)
 
-                #grid_offset_x += (x-width/2)*(scale-old_scale)/scale
-                #grid_offset_y += (y-height/2)*(scale-old_scale)/scale
+                grid_offset_x += (x)*(scale-old_scale)/scale
+                grid_offset_y += (y)*(scale-old_scale)/scale
             else:
                 grid_offset_x += (width/2)*(scale-old_scale)/scale
                 grid_offset_y += (height/2)*(scale-old_scale)/scale
