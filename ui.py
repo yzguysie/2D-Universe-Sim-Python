@@ -263,7 +263,7 @@ class Menu:
                 button.get_clicked()
     
 class Slider:
-    def __init__(self, x, y, width, height, value_range, step_amount, text, slider_pos, onclick=None):
+    def __init__(self, x, y, width, height, value_range, step_amount, text, slider_pos, onclick=None, logarithmic = False):
         self.x = x
         self.y = y
         self.width = width
@@ -296,6 +296,7 @@ class Slider:
         self.onclick = onclick
         self.events = None
         self.being_dragged = False
+        self.logarithmic = logarithmic
 
         
     def draw(self, surface):

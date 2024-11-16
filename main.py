@@ -416,6 +416,46 @@ class Body:
         f = "@"
         return str(self.x) + f + str(self.y) + f + str(self.xspeed) + f + str(self.yspeed) + f + str(self.mass) + f + str(self.color) + f + str(self.name)
 
+
+    def predict_pos(self, num_ticks, tickrate) -> list[tuple[float, float]]:
+        positions = []
+        x, y = self.x, self.y
+        xspeed, yspeed = self.xspeed, self.yspeed
+        bodies2 = copy.deepcopy(bodies)
+        for _ in range(num_ticks):
+            for body in bodies2:
+                body_distance = math.sqrt(abs(x-body.x)**2+abs(y-body.y)**2)
+                if body_distance == 0:
+                    return positions
+
+                
+
+                angle = math.atan2(y - body.y, x - body.x)
+                vector = pygame.math.Vector2(math.cos(angle), math.sin(angle))
+
+
+                force = ((self.mass*body.mass)/body_distance**2)
+                body_force_x = vector[0]*force*gravity
+                body_force_y = vector[1]*force*gravity
+                
+                xspeed -= (body_force_x/self.mass)/(tickrate/speed)
+                yspeed -= (body_force_y/self.mass)/(tickrate/speed)
+            
+                body.xspeed += (body_force_x/body.mass)/(tickrate/speed)
+                body.yspeed += (body_force_y/body.mass)/(tickrate/speed)
+                body.x += body.xspeed/tickrate*speed
+                body.y += body.yspeed/tickrate*speed
+
+                if body_distance < body.radius+self.radius:
+                    return positions
+                    
+            x += xspeed/tickrate*speed
+            y += yspeed/tickrate*speed
+            positions.append((x, y))
+        return positions
+
+
+
     def draw(self):
         if abs(self.x/scale+camera_x) < width+self.radius/scale and abs(self.y/scale+camera_y) < height+self.radius/scale:
             pygame.gfxdraw.filled_circle(window, int(self.x/scale+camera_x), int(self.y/scale+camera_y), int(self.radius/scale+.5), self.color)
@@ -423,6 +463,15 @@ class Body:
                 pygame.gfxdraw.aacircle(window, int(self.x/scale+camera_x), int(self.y/scale+camera_y), int(self.radius/scale+.5), (int(self.color[0]/1.5), int(self.color[1]/1.5), int(self.color[2]/1.5)))
             if draw_shine:
                 pygame.draw.circle(window, white, (int(self.x/scale+camera_x), int(self.y/scale+camera_y)), int((self.radius*0.8)/scale+.5), int(self.radius/scale/5), draw_top_right=True)
+
+    def draw_prediction(self, num_ticks, tickrate):
+        predictionsRealCoords = self.predict_pos(num_ticks, tickrate)
+        predictions = [(self.x/scale+camera_x, self.y/scale+camera_y)]
+        for p in predictionsRealCoords:
+            predictions.append((p[0]/scale+camera_x, p[1]/scale+camera_y))
+        if len(predictions) > 1:
+            pygame.draw.lines(window, self.color, False, predictions)
+
 
     def draw_at_coords(self):
 
@@ -603,6 +652,8 @@ def do_trails():
             bodies_to_delete.add(currentbody.id)
 
     Trails_time += time.time()-trail_start
+
+
        
 def apply_gravity(body_a, body_b):
     if body_a.id == body_b.id:
@@ -704,6 +755,7 @@ add_panel_y = height-add_panel_height
 
 grid_offset_x = 0
 grid_offset_y = 0
+
 def draw_grid():
     
     global grid_offset_x
@@ -919,7 +971,7 @@ def tick_buttons():
     
 
 pygame.mouse.set_visible(True)
-window = pygame.display.set_mode([width, height], pygame.RESIZABLE)
+window = pygame.display.set_mode([width, height], pygame.RESIZABLE, vsync=1)
 pygame.display.set_caption('Gravity Sim 2D')
 
 
@@ -1223,6 +1275,8 @@ while playing:
                     selected_body.xspeed = (start_x - (x-width/2)*scale)/30*user_body_speed
                     selected_body.yspeed = (start_y - (y-height/2)*scale)/30*user_body_speed
                     selected_body.draw()
+                    selected_body.draw_prediction(int(tickrate*2), tickrate/4)
+
                 else:
                     selected_body.draw()
                     bodies.append(selected_body)
