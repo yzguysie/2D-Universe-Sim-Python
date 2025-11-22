@@ -2,16 +2,11 @@
 
 <img width="2559" height="1368" alt="image" src="https://github.com/user-attachments/assets/438e0efc-c36d-4f19-84d0-72bfd7dba391" />
 
-WARNING: Look i dont really know what im doing or how im supposed to help you run this but i tried
-
-
 
 Instructions:
-run the Game file in python idle
+run the Game file in python 
 
 uses pygame 2.20
-
-If read_from_file is enabled, you need to have the .ini file and name it 2D Universe Sandbox.ini
 
 GAME CONTROLS:
 
