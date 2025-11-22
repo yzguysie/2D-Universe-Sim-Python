@@ -1,4 +1,4 @@
-# Universe Playgrounf
+# Universe Playground
 
 <img width="2559" height="1368" alt="image" src="https://github.com/user-attachments/assets/438e0efc-c36d-4f19-84d0-72bfd7dba391" />
 
