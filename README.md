@@ -1,29 +1,27 @@
-# 2D-Universe-Sim-Python
+# Universe Playgrounf
 
 <img width="2559" height="1368" alt="image" src="https://github.com/user-attachments/assets/438e0efc-c36d-4f19-84d0-72bfd7dba391" />
 
+A Universe Simulator made in Python
 
-Instructions:
-run the Game file in python 
+Uses PyGame
 
-uses pygame 2.20
+Controls:
 
-GAME CONTROLS:
+Space - toggles whether or not to follow the current body
 
-Space toggles whether or not to follow the current body
+Enter - toggles what the bottom panel displays
 
-Enter toggles what the bottom panel displays
+Arrow keys - change what body is being followed, in order by mass
 
-Arrow keys change what body is being followed, in order by mass
+The Right panel shows miscellaneous information on the current body selected
 
-Right panel shows miscellaneous information on the current body selected
+right click + drag to move around
 
-When not following a body, right click to move around
+Scroll mouse up/down to zoom in/out
 
-Scroll up/down to zoom in/out
+HOW TO ADD PLANETS/STARS: When the bottom panel shows display planets/stars, you can click on the planet/star you want, then click to place, and drag to add momentum
 
-HOW TO ADD BODIES: When the bottom panel shows display planets/stars, you can click on the planet/star you want, then click where you want it to be, hold that click, and drag to add momentum
+When the bottom panel is showing the biggest planets/stars, you can click on them to go to them
 
-When the bottom panel is showing the biggest planets/stars, you can click on them to 'go' to them
-
-Big star collisions cause 'explosions'
+Note: Big star collisions will cause explosions
